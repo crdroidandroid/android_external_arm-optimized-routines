@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "../asmdefs.h"
+
+#if __ARM_FEATURE_SVE
 /* Assumptions:
  *
  * ARMv8-a, AArch64
@@ -21,10 +24,7 @@
 #define FUNC  __strcpy_aarch64_sve
 #endif
 
-	.globl	FUNC
-	.type	FUNC, %function
-	.p2align 4
-FUNC:
+ENTRY_ALIGN (FUNC, 4)
 	setffr				/* initialize FFR */
 	ptrue	p2.b, all		/* all ones; loop invariant */
 	mov	x2, 0			/* initialize offset */
@@ -66,4 +66,7 @@ FUNC:
 #endif
 	ret
 
-	.size	FUNC, . - FUNC
+END (FUNC)
+
+#endif
+

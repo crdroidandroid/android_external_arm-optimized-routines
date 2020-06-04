@@ -214,6 +214,16 @@ struct conf
   double errlim;
 };
 
+/* Wrappers for sincos.  */
+static float sincosf_sinf(float x) {(void)cosf(x); return sinf(x);}
+static float sincosf_cosf(float x) {(void)sinf(x); return cosf(x);}
+static double sincos_sin(double x) {(void)cos(x); return sin(x);}
+static double sincos_cos(double x) {(void)sin(x); return cos(x);}
+#if USE_MPFR
+static int sincos_mpfr_sin(mpfr_t y, const mpfr_t x, mpfr_rnd_t r) { mpfr_cos(y,x,r); return mpfr_sin(y,x,r); }
+static int sincos_mpfr_cos(mpfr_t y, const mpfr_t x, mpfr_rnd_t r) { mpfr_sin(y,x,r); return mpfr_cos(y,x,r); }
+#endif
+
 /* A bit of a hack: call vector functions twice with the same
    input in lane 0 but a different value in other lanes: once
    with an in-range value and then with a special case value.  */
@@ -240,6 +250,7 @@ static double v_sin(double x) { return __v_sin(argd(x))[0]; }
 static double v_cos(double x) { return __v_cos(argd(x))[0]; }
 static double v_exp(double x) { return __v_exp(argd(x))[0]; }
 static double v_log(double x) { return __v_log(argd(x))[0]; }
+static double v_pow(double x, double y) { return __v_pow(argd(x),argd(y))[0]; }
 #ifdef __vpcs
 static float vn_sinf(float x) { return __vn_sinf(argf(x))[0]; }
 static float vn_cosf(float x) { return __vn_cosf(argf(x))[0]; }
@@ -253,6 +264,7 @@ static double vn_sin(double x) { return __vn_sin(argd(x))[0]; }
 static double vn_cos(double x) { return __vn_cos(argd(x))[0]; }
 static double vn_exp(double x) { return __vn_exp(argd(x))[0]; }
 static double vn_log(double x) { return __vn_log(argd(x))[0]; }
+static double vn_pow(double x, double y) { return __vn_pow(argd(x),argd(y))[0]; }
 static float Z_sinf(float x) { return _ZGVnN4v_sinf(argf(x))[0]; }
 static float Z_cosf(float x) { return _ZGVnN4v_cosf(argf(x))[0]; }
 static float Z_expf(float x) { return _ZGVnN4v_expf(argf(x))[0]; }
@@ -263,6 +275,7 @@ static double Z_sin(double x) { return _ZGVnN2v_sin(argd(x))[0]; }
 static double Z_cos(double x) { return _ZGVnN2v_cos(argd(x))[0]; }
 static double Z_exp(double x) { return _ZGVnN2v_exp(argd(x))[0]; }
 static double Z_log(double x) { return _ZGVnN2v_log(argd(x))[0]; }
+static double Z_pow(double x, double y) { return _ZGVnN2vv_pow(argd(x),argd(y))[0]; }
 #endif
 #endif
 
@@ -311,6 +324,8 @@ static const struct fun fun[] = {
 #define D2(x) F (x, x, x##l, mpfr_##x, 2, 0, d2, 0)
  F1 (sin)
  F1 (cos)
+ F (sincosf_sinf, sincosf_sinf, sincos_sin, sincos_mpfr_sin, 1, 1, f1, 0)
+ F (sincosf_cosf, sincosf_cosf, sincos_cos, sincos_mpfr_cos, 1, 1, f1, 0)
  F1 (exp)
  F1 (exp2)
  F1 (log)
@@ -334,6 +349,7 @@ static const struct fun fun[] = {
  F (__s_cos, __s_cos, cosl, mpfr_cos, 1, 0, d1, 0)
  F (__s_exp, __s_exp, expl, mpfr_exp, 1, 0, d1, 0)
  F (__s_log, __s_log, logl, mpfr_log, 1, 0, d1, 0)
+ F (__s_pow, __s_pow, powl, mpfr_pow, 2, 0, d2, 0)
 #if __aarch64__
  F (__v_sinf, v_sinf, sin, mpfr_sin, 1, 1, f1, 1)
  F (__v_cosf, v_cosf, cos, mpfr_cos, 1, 1, f1, 1)
@@ -347,6 +363,7 @@ static const struct fun fun[] = {
  F (__v_cos, v_cos, cosl, mpfr_cos, 1, 0, d1, 1)
  F (__v_exp, v_exp, expl, mpfr_exp, 1, 0, d1, 1)
  F (__v_log, v_log, logl, mpfr_log, 1, 0, d1, 1)
+ F (__v_pow, v_pow, powl, mpfr_pow, 2, 0, d2, 1)
 #ifdef __vpcs
  F (__vn_sinf, vn_sinf, sin, mpfr_sin, 1, 1, f1, 1)
  F (__vn_cosf, vn_cosf, cos, mpfr_cos, 1, 1, f1, 1)
@@ -360,6 +377,7 @@ static const struct fun fun[] = {
  F (__vn_cos, vn_cos, cosl, mpfr_cos, 1, 0, d1, 1)
  F (__vn_exp, vn_exp, expl, mpfr_exp, 1, 0, d1, 1)
  F (__vn_log, vn_log, logl, mpfr_log, 1, 0, d1, 1)
+ F (__vn_pow, vn_pow, powl, mpfr_pow, 2, 0, d2, 1)
  F (_ZGVnN4v_sinf, Z_sinf, sin, mpfr_sin, 1, 1, f1, 1)
  F (_ZGVnN4v_cosf, Z_cosf, cos, mpfr_cos, 1, 1, f1, 1)
  F (_ZGVnN4v_expf, Z_expf, exp, mpfr_exp, 1, 1, f1, 1)
@@ -370,6 +388,7 @@ static const struct fun fun[] = {
  F (_ZGVnN2v_cos, Z_cos, cosl, mpfr_cos, 1, 0, d1, 1)
  F (_ZGVnN2v_exp, Z_exp, expl, mpfr_exp, 1, 0, d1, 1)
  F (_ZGVnN2v_log, Z_log, logl, mpfr_log, 1, 0, d1, 1)
+ F (_ZGVnN2vv_pow, Z_pow, powl, mpfr_pow, 2, 0, d2, 1)
 #endif
 #endif
 #endif

@@ -20,16 +20,33 @@ cc_defaults {
         // BSD libm doesn't set errno, and bionic was based on the BSDs.
         // https://github.com/ARM-software/optimized-routines/issues/16#issuecomment-572009659
         "-DWANT_ERRNO=0",
-        // TODO: we will want the SVE code in future, but it's not ready yet.
+        // TODO: we may want the vector code in future, but it's not ready yet.
         "-DWANT_VMATH=0",
     ],
     local_include_dirs: ["math/include"],
 }
 
+cc_defaults {
+    name: "libarm-optimized-routines-defaults",
+    defaults: ["arm-optimized-routines-defaults"],
+    ramdisk_available: true,
+    recovery_available: true,
+    native_bridge_supported: true,
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.runtime",
+    ],
+
+    stl: "none",
+    static: {
+        system_shared_libs: [],
+    },
+    header_libs: ["libc_headers"],
+}
+
 cc_library {
     name: "libarm-optimized-routines-math",
-    defaults: ["arm-optimized-routines-defaults"],
-    recovery_available: true,
+    defaults: ["libarm-optimized-routines-defaults"],
     srcs: [
         "math/*.c",
     ],
@@ -51,9 +68,33 @@ cc_library {
             enabled: true,
         },
     },
-    stl: "none",
-    static: {
-        system_shared_libs: [],
+}
+
+cc_library {
+    name: "libarm-optimized-routines-string",
+    defaults: ["libarm-optimized-routines-defaults"],
+
+    arch: {
+        arm64: {
+            srcs: [
+                "string/aarch64/memchr.S",
+                "string/aarch64/memcmp.S",
+                "string/aarch64/stpcpy.S",
+                "string/aarch64/strchrnul.S",
+                "string/aarch64/strchr-mte.S",
+                "string/aarch64/strchr.S",
+                "string/aarch64/strcmp.S",
+                "string/aarch64/strcpy.S",
+                "string/aarch64/strlen-mte.S",
+                "string/aarch64/strlen.S",
+                "string/aarch64/strncmp.S",
+                "string/aarch64/strnlen.S",
+                "string/aarch64/strrchr.S",
+            ],
+            asflags: [
+                "-D__memcmp_aarch64=memcmp",
+            ]
+        },
     },
 }
 
