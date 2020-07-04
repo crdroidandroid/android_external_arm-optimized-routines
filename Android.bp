@@ -29,13 +29,7 @@ cc_defaults {
 cc_defaults {
     name: "libarm-optimized-routines-defaults",
     defaults: ["arm-optimized-routines-defaults"],
-    ramdisk_available: true,
     recovery_available: true,
-    native_bridge_supported: true,
-    apex_available: [
-        "//apex_available:platform",
-        "com.android.runtime",
-    ],
 
     stl: "none",
     static: {
@@ -143,8 +137,4 @@ sh_test {
     host_supported: true,
     device_supported: false,
     test_config: "arm-optimized-routines-tests.xml",
-    target_required: [
-        "mathtest",
-        "ulp",
-    ],
 }
