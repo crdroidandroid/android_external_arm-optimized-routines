@@ -306,3 +306,4 @@ L(page_cross):
 	b	L(fp_gt8)
 
 END (STRCPY)
+

@@ -1,7 +1,7 @@
 /*
  * strcmp - compare two strings
  *
- * Copyright (c) 2012, Arm Limited.
+ * Copyright (c) 2012-2020, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -168,3 +168,4 @@ L(done):
 	ret
 
 END (__strcmp_aarch64)
+

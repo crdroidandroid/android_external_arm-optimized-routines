@@ -26,12 +26,27 @@ cc_defaults {
     local_include_dirs: ["math/include"],
 }
 
-cc_library {
-    name: "libarm-optimized-routines-math",
+cc_defaults {
+    name: "libarm-optimized-routines-defaults",
     defaults: ["arm-optimized-routines-defaults"],
     ramdisk_available: true,
     recovery_available: true,
     native_bridge_supported: true,
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.runtime",
+    ],
+
+    stl: "none",
+    static: {
+        system_shared_libs: [],
+    },
+    header_libs: ["libc_headers"],
+}
+
+cc_library {
+    name: "libarm-optimized-routines-math",
+    defaults: ["libarm-optimized-routines-defaults"],
     srcs: [
         "math/*.c",
     ],
@@ -53,9 +68,43 @@ cc_library {
             enabled: true,
         },
     },
-    stl: "none",
-    static: {
-        system_shared_libs: [],
+}
+
+cc_library {
+    name: "libarm-optimized-routines-string",
+    defaults: ["libarm-optimized-routines-defaults"],
+
+    arch: {
+        arm64: {
+            srcs: [
+                "string/aarch64/memchr-mte.S",
+                "string/aarch64/memchr.S",
+                "string/aarch64/memcmp.S",
+                "string/aarch64/memrchr.S",
+                "string/aarch64/stpcpy-mte.S",
+                "string/aarch64/stpcpy.S",
+                "string/aarch64/strchrnul-mte.S",
+                "string/aarch64/strchrnul.S",
+                "string/aarch64/strchr-mte.S",
+                "string/aarch64/strchr.S",
+                "string/aarch64/strcmp-mte.S",
+                "string/aarch64/strcmp.S",
+                "string/aarch64/strcpy-mte.S",
+                "string/aarch64/strcpy.S",
+                "string/aarch64/strlen-mte.S",
+                "string/aarch64/strlen.S",
+                "string/aarch64/strncmp-mte.S",
+                "string/aarch64/strncmp.S",
+                "string/aarch64/strnlen.S",
+                "string/aarch64/strrchr-mte.S",
+                "string/aarch64/strrchr.S",
+            ],
+            asflags: [
+                "-D__memcmp_aarch64=memcmp",
+                "-D__memrchr_aarch64=memrchr",
+                "-D__strnlen_aarch64=strnlen",
+            ]
+        },
     },
 }
 
