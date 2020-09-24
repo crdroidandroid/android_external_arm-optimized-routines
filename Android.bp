@@ -41,7 +41,6 @@ cc_defaults {
     static: {
         system_shared_libs: [],
     },
-    header_libs: ["libc_headers"],
 }
 
 cc_library {
