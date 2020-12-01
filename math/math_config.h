@@ -298,6 +298,24 @@ check_uflow (double x)
   return WANT_ERRNO ? __math_check_uflow (x) : x;
 }
 
+/* Check if the result overflowed to infinity.  */
+HIDDEN float __math_check_oflowf (float);
+/* Check if the result underflowed to 0.  */
+HIDDEN float __math_check_uflowf (float);
+
+/* Check if the result overflowed to infinity.  */
+static inline float
+check_oflowf (float x)
+{
+  return WANT_ERRNO ? __math_check_oflowf (x) : x;
+}
+
+/* Check if the result underflowed to 0.  */
+static inline float
+check_uflowf (float x)
+{
+  return WANT_ERRNO ? __math_check_uflowf (x) : x;
+}
 
 /* Shared between expf, exp2f and powf.  */
 #define EXP2F_TABLE_BITS 5
@@ -415,5 +433,30 @@ extern const struct pow_log_data
   /* Note: the pad field is unused, but allows slightly faster indexing.  */
   struct {double invc, pad, logc, logctail;} tab[1 << POW_LOG_TABLE_BITS];
 } __pow_log_data HIDDEN;
+
+extern const struct erff_data
+{
+  float erff_poly_A[6];
+  float erff_poly_B[7];
+} __erff_data HIDDEN;
+
+#define ERF_POLY_A_ORDER 19
+#define ERF_POLY_A_NCOEFFS 10
+#define ERFC_POLY_C_NCOEFFS 16
+#define ERFC_POLY_D_NCOEFFS 18
+#define ERFC_POLY_E_NCOEFFS 14
+#define ERFC_POLY_F_NCOEFFS 17
+extern const struct erf_data
+{
+  double erf_poly_A[ERF_POLY_A_NCOEFFS];
+  double erf_ratio_N_A[5];
+  double erf_ratio_D_A[5];
+  double erf_ratio_N_B[7];
+  double erf_ratio_D_B[6];
+  double erfc_poly_C[ERFC_POLY_C_NCOEFFS];
+  double erfc_poly_D[ERFC_POLY_D_NCOEFFS];
+  double erfc_poly_E[ERFC_POLY_E_NCOEFFS];
+  double erfc_poly_F[ERFC_POLY_F_NCOEFFS];
+} __erf_data HIDDEN;
 
 #endif
