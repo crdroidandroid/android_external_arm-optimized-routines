@@ -144,5 +144,4 @@ sh_test {
     test_suites: ["general-tests"],
     host_supported: true,
     device_supported: false,
-    require_root: true,
 }
