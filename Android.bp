@@ -1,3 +1,20 @@
+package {
+    default_applicable_licenses: ["external_arm-optimized-routines_license"],
+}
+
+// Added automatically by a large-scale-change
+// See: http://go/android-license-faq
+license {
+    name: "external_arm-optimized-routines_license",
+    visibility: [":__subpackages__"],
+    license_kinds: [
+        "SPDX-license-identifier-MIT",
+    ],
+    license_text: [
+        "LICENSE",
+    ],
+}
+
 cc_defaults {
     name: "arm-optimized-routines-defaults",
     host_supported: true,
