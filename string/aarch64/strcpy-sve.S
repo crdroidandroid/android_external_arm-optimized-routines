@@ -1,7 +1,7 @@
 /*
  * strcpy/stpcpy - copy a string returning pointer to start/end.
  *
- * Copyright (c) 2018, Arm Limited.
+ * Copyright (c) 2018-2021, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -14,9 +14,6 @@
  * SVE Available.
  */
 
-	.arch	armv8-a+sve
-	.text
-
 /* To build as stpcpy, define BUILD_STPCPY before compiling this file.  */
 #ifdef BUILD_STPCPY
 #define FUNC  __stpcpy_aarch64_sve
@@ -24,7 +21,9 @@
 #define FUNC  __strcpy_aarch64_sve
 #endif
 
-ENTRY_ALIGN (FUNC, 4)
+ENTRY (FUNC)
+	PTR_ARG (0)
+	PTR_ARG (1)
 	setffr				/* initialize FFR */
 	ptrue	p2.b, all		/* all ones; loop invariant */
 	mov	x2, 0			/* initialize offset */
