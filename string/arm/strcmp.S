@@ -1,7 +1,7 @@
 /*
  * strcmp for ARMv7
  *
- * Copyright (c) 2012-2019, Arm Limited.
+ * Copyright (c) 2012-2021, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -125,7 +125,6 @@
 #endif
 	.endm
 
-	.text
 	.p2align	5
 L(strcmp_start_addr):
 #if STRCMP_NO_PRECHECK == 0

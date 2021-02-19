@@ -1,7 +1,7 @@
 /*
  * memchr - find a character in a memory zone
  *
- * Copyright (c) 2018, Arm Limited.
+ * Copyright (c) 2018-2021, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -14,15 +14,14 @@
  * SVE Available.
  */
 
-	.arch	armv8-a+sve
-	.text
-
-ENTRY_ALIGN(__memchr_aarch64_sve, 4)
+ENTRY (__memchr_aarch64_sve)
+	PTR_ARG (0)
+	SIZE_ARG (2)
 	dup	z1.b, w1			/* duplicate c to a vector */
 	setffr					/* initialize FFR */
 	mov	x3, 0				/* initialize off */
-	nop
 
+	.p2align 4
 0:	whilelo	p1.b, x3, x2			/* make sure off < max */
 	b.none	9f
 

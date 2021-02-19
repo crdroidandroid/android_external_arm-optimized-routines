@@ -1,7 +1,7 @@
 /*
  * strnlen - calculate the length of a string with limit.
  *
- * Copyright (c) 2019, Arm Limited.
+ * Copyright (c) 2019-2021, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -14,10 +14,9 @@
  * SVE Available.
  */
 
-	.arch	armv8-a+sve
-	.text
-
-ENTRY_ALIGN (__strnlen_aarch64_sve, 4)
+ENTRY (__strnlen_aarch64_sve)
+	PTR_ARG (0)
+	SIZE_ARG (1)
 	setffr				/* initialize FFR */
 	mov	x2, 0			/* initialize len */
 	b	1f
@@ -66,7 +65,7 @@ ENTRY_ALIGN (__strnlen_aarch64_sve, 4)
 	b	1b
 
 	/* End of count.  Return max.  */
-9:	mov	x0, x2
+9:	mov	x0, x1
 	ret
 
 END (__strnlen_aarch64_sve)

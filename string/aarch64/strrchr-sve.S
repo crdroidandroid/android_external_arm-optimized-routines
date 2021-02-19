@@ -1,7 +1,7 @@
 /*
  * strrchr - find the last of a character in a string
  *
- * Copyright (c) 2019, Arm Limited.
+ * Copyright (c) 2019-2021, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -14,10 +14,8 @@
  * SVE Available.
  */
 
-	.arch	armv8-a+sve
-	.text
-
-ENTRY_ALIGN (__strrchr_aarch64_sve, 4)
+ENTRY (__strrchr_aarch64_sve)
+	PTR_ARG (0)
 	dup	z1.b, w1		/* replicate byte across vector */
 	setffr				/* initialize FFR */
 	ptrue	p1.b			/* all ones; loop invariant */

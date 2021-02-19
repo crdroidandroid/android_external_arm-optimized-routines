@@ -1,7 +1,7 @@
 /*
  * memchr - find a character in a memory zone
  *
- * Copyright (c) 2014-2019, Arm Limited.
+ * Copyright (c) 2014-2020, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -47,6 +47,8 @@
  */
 
 ENTRY (__memchr_aarch64)
+	PTR_ARG (0)
+	SIZE_ARG (2)
 	/* Do not dereference srcin if no bytes to compare.  */
 	cbz	cntin, L(zero_length)
 	/*

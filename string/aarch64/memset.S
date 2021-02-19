@@ -1,7 +1,7 @@
 /*
  * memset - fill memory with a constant byte
  *
- * Copyright (c) 2012-2020, Arm Limited.
+ * Copyright (c) 2012-2021, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -22,6 +22,8 @@
 #define zva_val	x5
 
 ENTRY (__memset_aarch64)
+	PTR_ARG (0)
+	SIZE_ARG (2)
 
 	dup	v0.16B, valw
 	add	dstend, dstin, count
@@ -37,7 +39,7 @@ ENTRY (__memset_aarch64)
 	str	val, [dstin]
 	str	val, [dstend, -8]
 	ret
-	nop
+	.p2align 4
 1:	tbz	count, 2, 2f
 	str	valw, [dstin]
 	str	valw, [dstend, -4]
