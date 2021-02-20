@@ -1,7 +1,7 @@
 /*
  * strrchr test.
  *
- * Copyright (c) 2019-2020, Arm Limited.
+ * Copyright (c) 2019-2021, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -91,7 +91,7 @@ test (const struct fun *fun, int align, int seekpos, int len)
   if (p != s + len)
     {
       ERR ("%s (%p, 0x%02x) len %d returned %p, expected %p pos %d\n",
-	   fun->name, s, 0, len, p, f, len);
+	   fun->name, s, 0, len, p, s + len, len);
       quote ("input", s, len);
     }
 }
