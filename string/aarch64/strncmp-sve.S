@@ -1,7 +1,7 @@
 /*
  * strncmp - compare two strings with limit
  *
- * Copyright (c) 2018, Arm Limited.
+ * Copyright (c) 2018-2021, Arm Limited.
  * SPDX-License-Identifier: MIT
  */
 
@@ -14,10 +14,10 @@
  * SVE Available.
  */
 
-	.arch	armv8-a+sve
-	.text
-
-ENTRY_ALIGN (__strncmp_aarch64_sve, 4)
+ENTRY (__strncmp_aarch64_sve)
+	PTR_ARG (0)
+	PTR_ARG (1)
+	SIZE_ARG (2)
 	setffr				/* initialize FFR */
 	mov	x3, 0			/* initialize off */
 
