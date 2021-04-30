@@ -62,7 +62,7 @@ cc_defaults {
     header_libs: ["libc_headers"],
 }
 
-cc_library {
+cc_library_static {
     name: "libarm-optimized-routines-math",
     defaults: ["libarm-optimized-routines-defaults"],
     exclude_srcs: [
@@ -97,7 +97,7 @@ cc_library {
     },
 }
 
-cc_library {
+cc_library_static {
     name: "libarm-optimized-routines-string",
     defaults: ["libarm-optimized-routines-defaults"],
 
