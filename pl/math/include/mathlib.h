@@ -9,6 +9,9 @@
 #define _MATHLIB_H
 
 float erff (float);
+float log10f (float);
+
+double log10 (double);
 
 #if __aarch64__
 #if __GNUC__ >= 5

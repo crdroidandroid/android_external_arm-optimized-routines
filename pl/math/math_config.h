@@ -24,10 +24,6 @@
    set to 1 if math.h has (math_errhandling & MATH_ERRNO) != 0.  */
 # define WANT_ERRNO 0
 #endif
-#ifndef WANT_ERRNO_UFLOW
-/* Set errno to ERANGE if result underflows to 0 (in all rounding modes).  */
-# define WANT_ERRNO_UFLOW (WANT_ROUNDING && WANT_ERRNO)
-#endif
 
 /* Compiler can inline round as a single instruction.  */
 #ifndef HAVE_FAST_ROUND
@@ -322,5 +318,36 @@ extern const struct erff_data
   float erff_poly_A[6];
   float erff_poly_B[7];
 } __erff_data HIDDEN;
+
+/* Data for logf and log10f.  */
+#define LOGF_TABLE_BITS 4
+#define LOGF_POLY_ORDER 4
+extern const struct logf_data
+{
+  struct
+  {
+    double invc, logc;
+  } tab[1 << LOGF_TABLE_BITS];
+  double ln2;
+  double invln10;
+  double poly[LOGF_POLY_ORDER - 1]; /* First order coefficient is 1.  */
+} __logf_data HIDDEN;
+
+/* Data for low accuracy log10 (with 1/ln(10) included in coefficients).  */
+#define LOG10_TABLE_BITS 7
+#define LOG10_POLY_ORDER 6
+#define LOG10_POLY1_ORDER 10
+extern const struct log10_data
+{
+  double ln2hi;
+  double ln2lo;
+  double invln10;
+  double poly[LOG10_POLY_ORDER - 1]; /* First coefficient is 1/log(10).  */
+  double poly1[LOG10_POLY1_ORDER - 1];
+  struct {double invc, logc;} tab[1 << LOG10_TABLE_BITS];
+#if !HAVE_FAST_FMA
+  struct {double chi, clo;} tab2[1 << LOG10_TABLE_BITS];
+#endif
+} __log10_data HIDDEN;
 
 #endif
