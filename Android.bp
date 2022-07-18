@@ -139,6 +139,33 @@ cc_library_static {
     },
 }
 
+// Memory intrinsics for bare-metal Rust binaries.
+cc_library_static {
+    name: "libarm-optimized-routines-mem",
+    nocrt: true,
+    system_shared_libs: [],
+    stl: "none",
+    sanitize: {
+        hwaddress: false,
+    },
+    arch: {
+        arm64: {
+            srcs: [
+                "string/aarch64/memcmp.S",
+                "string/aarch64/memcpy.S",
+                "string/aarch64/memset.S",
+            ],
+            asflags: [
+                "-D__memcmp_aarch64=memcmp",
+                "-D__memcpy_aarch64=memcpy",
+                "-D__memmove_aarch64=memmove",
+                "-D__memset_aarch64=memset",
+            ],
+        },
+    },
+    visibility: ["//packages/modules/Virtualization:__subpackages__"],
+}
+
 // adb shell "/data/nativetest64/mathtest/mathtest /data/nativetest64/mathtest/test/testcases/directed/*"
 // adb shell "/data/nativetest/mathtest/mathtest /data/nativetest/mathtest/test/testcases/directed/*"
 cc_test {
