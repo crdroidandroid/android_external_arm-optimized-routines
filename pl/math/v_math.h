@@ -213,6 +213,11 @@ v_sel_u32 (v_u32_t p, v_u32_t x, v_u32_t y)
 {
   return p ? x : y;
 }
+static inline v_f32_t
+v_sqrt_f32 (v_f32_t x)
+{
+  return __builtin_sqrtf (x);
+}
 /* convert to type1 from type2.  */
 static inline v_f32_t
 v_to_f32_s32 (v_s32_t x)
@@ -229,6 +234,16 @@ static inline v_u32_t
 v_as_u32_f32 (v_f32_t x)
 {
   union { v_f32_t f; v_u32_t u; } r = {x};
+  return r.u;
+}
+static inline v_s32_t
+v_as_s32_f32 (v_f32_t x)
+{
+  union
+  {
+    v_f32_t f;
+    v_s32_t u;
+  } r = {x};
   return r.u;
 }
 static inline v_f32_t
@@ -543,6 +558,11 @@ v_sel_u32 (v_u32_t p, v_u32_t x, v_u32_t y)
 {
   return vbslq_u32 (p, x, y);
 }
+static inline v_f32_t
+v_sqrt_f32 (v_f32_t x)
+{
+  return vsqrtq_f32 (x);
+}
 /* convert to type1 from type2.  */
 static inline v_f32_t
 v_to_f32_s32 (v_s32_t x)
@@ -559,6 +579,16 @@ static inline v_u32_t
 v_as_u32_f32 (v_f32_t x)
 {
   union { v_f32_t f; v_u32_t u; } r = {x};
+  return r.u;
+}
+static inline v_s32_t
+v_as_s32_f32 (v_f32_t x)
+{
+  union
+  {
+    v_f32_t f;
+    v_s32_t u;
+  } r = {x};
   return r.u;
 }
 static inline v_f32_t

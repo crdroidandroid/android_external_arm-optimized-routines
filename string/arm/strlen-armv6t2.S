@@ -24,6 +24,11 @@
 #define S2HI		lsl
 #endif
 
+/* Ensure the .cantunwind directive is prepended to .fnend.
+   Leaf functions cannot throw exceptions - EHABI only supports
+   synchronous exceptions.  */
+#define IS_LEAF
+
 	/* This code requires Thumb.  */
 	.thumb
 	.syntax unified
@@ -42,30 +47,7 @@
 #define tmp2		r5
 
 ENTRY (__strlen_armv6t2)
-	/* common pacbti_prologue macro from pacbti.h not used.
-	   handwritten prologue saves one push instruction. */
-#if __ARM_FEATURE_PAC_DEFAULT
-#if __ARM_FEATURE_BTI_DEFAULT
-	pacbti ip, lr, sp
-#else
-	pac ip, lr, sp
-#endif /* __ARM_FEATURE_BTI_DEFAULT */
-	push    {r4, r5, ip}
-	.save   {r4, r5, ra_auth_code}
-	.cfi_def_cfa_offset 12
-	.cfi_offset 143, -4
-	.cfi_offset 5, -8
-	.cfi_offset 4, -12
-#else
-#if __ARM_FEATURE_BTI_DEFAULT
-	bti
-#endif /* __ARM_FEATURE_BTI_DEFAULT */
-	push    {r4, r5}
-	.save   {r4, r5}
-	.cfi_def_cfa_offset 8
-	.cfi_offset 4, -8
-	.cfi_offset 5, -4
-#endif /* __ARM_FEATURE_PAC_DEFAULT */
+	prologue 4 5 savepac=HAVE_PAC_LEAF
 	pld	[srcin, #0]
 	bic	src, srcin, #7
 	mvn	const_m1, #0
@@ -125,20 +107,7 @@ L(null_found):
 #endif
 	clz	data1a, data1a
 	add	result, result, data1a, lsr #3	/* Bits -> Bytes.  */
-#if __ARM_FEATURE_PAC_DEFAULT
-	pop	{r4, r5, ip}
-	.cfi_restore 4
-	.cfi_restore 5
-	.cfi_restore 143
-	.cfi_def_cfa_offset 0
-	aut ip, lr, sp
-#else
-	ldrd	r4, r5, [sp], #8
-	.cfi_restore 4
-	.cfi_restore 5
-	.cfi_def_cfa_offset 0
-#endif /* __ARM_FEATURE_PAC_DEFAULT */
-	bx lr
+	epilogue 4 5 savepac=HAVE_PAC_LEAF
 
 L(misaligned8):
 	ldrd	data1a, data1b, [src]

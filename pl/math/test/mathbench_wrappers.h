@@ -73,3 +73,31 @@ _Z_atan2f_wrap (v_float x)
 #endif // __vpcs
 #endif // __arch64__
 #endif // WANT_VMATH
+
+#if WANT_SVE_MATH
+
+static sv_float
+__sv_atan2f_wrap (sv_float x, sv_bool pg)
+{
+  return __sv_atan2f_x (x, svdup_n_f32 (5.0f), pg);
+}
+
+static sv_float
+_Z_sv_atan2f_wrap (sv_float x, sv_bool pg)
+{
+  return _ZGVsMxvv_atan2f (x, svdup_n_f32 (5.0f), pg);
+}
+
+static sv_double
+__sv_atan2_wrap (sv_double x, sv_bool pg)
+{
+  return __sv_atan2_x (x, svdup_n_f64 (5.0), pg);
+}
+
+static sv_double
+_Z_sv_atan2_wrap (sv_double x, sv_bool pg)
+{
+  return _ZGVsMxvv_atan2 (x, svdup_n_f64 (5.0), pg);
+}
+
+#endif // WANT_SVE_MATH

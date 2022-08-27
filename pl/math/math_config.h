@@ -419,4 +419,81 @@ extern const struct atanf_poly_data
 {
   float poly[ATANF_POLY_NCOEFFS];
 } __atanf_poly_data HIDDEN;
+
+#define ASINHF_NCOEFFS 8
+extern const struct asinhf_data
+{
+  float coeffs[ASINHF_NCOEFFS];
+} __asinhf_data HIDDEN;
+
+#define LOG_TABLE_BITS 7
+#define LOG_POLY_ORDER 6
+#define LOG_POLY1_ORDER 12
+extern const struct log_data
+{
+  double ln2hi;
+  double ln2lo;
+  double poly[LOG_POLY_ORDER - 1]; /* First coefficient is 1.  */
+  double poly1[LOG_POLY1_ORDER - 1];
+  struct
+  {
+    double invc, logc;
+  } tab[1 << LOG_TABLE_BITS];
+#if !HAVE_FAST_FMA
+  struct
+  {
+    double chi, clo;
+  } tab2[1 << LOG_TABLE_BITS];
+#endif
+} __log_data HIDDEN;
+
+#define ASINH_NCOEFFS 18
+extern const struct asinh_data
+{
+  double poly[ASINH_NCOEFFS];
+} __asinh_data HIDDEN;
+
+#define LOG1P_NCOEFFS 19
+extern const struct log1p_data
+{
+  double coeffs[LOG1P_NCOEFFS];
+} __log1p_data HIDDEN;
+
+#define LOG1PF_2U5
+#define V_LOG1PF_2U5
+#define LOG1PF_NCOEFFS 9
+extern const struct log1pf_data
+{
+  float coeffs[LOG1PF_NCOEFFS];
+} __log1pf_data HIDDEN;
+
+#define V_LOG2F_TABLE_BITS 4
+#define V_LOG2F_POLY_ORDER 4
+extern const struct v_log2f_data
+{
+  struct
+  {
+    /* Pad with dummy for quad-aligned memory access.  */
+    float invc_hi, invc_lo, logc, dummy;
+  } tab[1 << V_LOG2F_TABLE_BITS];
+  float poly[V_LOG2F_POLY_ORDER];
+} __v_log2f_data HIDDEN;
+
+#define V_LOG2_TABLE_BITS 7
+#define V_LOG2_POLY_ORDER 7
+extern const struct v_log2_data
+{
+  double poly[V_LOG2_POLY_ORDER - 1];
+  struct
+  {
+    double invc, log2c;
+  } tab[1 << V_LOG2_TABLE_BITS];
+} __v_log2_data HIDDEN;
+
+#define V_SINF_NCOEFFS 4
+extern const struct sv_sinf_data
+{
+  float coeffs[V_SINF_NCOEFFS];
+} __sv_sinf_data HIDDEN;
+
 #endif
