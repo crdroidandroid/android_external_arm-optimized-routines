@@ -1,10 +1,13 @@
 # Example config.mk
 #
 # Copyright (c) 2018-2020, Arm Limited.
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
 
 # Subprojects to build
 SUBS = math string networking
+
+# Subsubprojects to build if subproject pl is built
+PLSUBS = math
 
 # Target architecture: aarch64, arm or x86_64
 ARCH = aarch64
@@ -58,6 +61,13 @@ math-cflags += -ffp-contract=fast -fno-math-errno
 
 # Disable vector math code
 #math-cflags += -DWANT_VMATH=0
+
+# Disable/enable SVE vector math code and tests
+WANT_SVE_MATH = 0
+ifeq ($(WANT_SVE_MATH), 1)
+  math-cflags += -march=armv8.2-a+sve
+endif
+math-cflags += -DWANT_SVE_MATH=$(WANT_SVE_MATH)
 
 # Disable fenv checks
 #math-ulpflags = -q -f
