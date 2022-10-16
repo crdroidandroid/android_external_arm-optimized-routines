@@ -3,4 +3,4 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 #define SCALAR 1
-#include "v_log2_2u5.c"
+#include "v_tanf_3u2.c"

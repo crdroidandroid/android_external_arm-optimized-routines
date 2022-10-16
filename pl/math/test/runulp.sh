@@ -51,13 +51,13 @@ t log10f  0x1p-26   0x1p3   50000
 t log10f  0x1p-4    0x1p4   50000
 t log10f  0         inf     50000
 
-L=1.15
+L=1.11
 Ldir=
 t log10  0 0xffff000000000000 10000
 t log10  0x1p-4    0x1p4      40000
 t log10  0         inf        40000
 
-L=3.5
+L=3.55
 t erfc  0       0xffff0000   10000
 t erfc  0x1p-1022  0x1p-26   40000
 t erfc -0x1p-1022 -0x1p-26   40000
@@ -66,7 +66,7 @@ t erfc -0x1p-26   -0x1p3     40000
 t erfc  0          inf       40000
 Ldir=0.5
 
-L=1.45
+L=1.5
 t erfcf  0      0xffff0000 10000
 t erfcf  0x1p-127  0x1p-26 40000
 t erfcf -0x1p-127 -0x1p-26 40000
@@ -74,27 +74,27 @@ t erfcf  0x1p-26    0x1p5  40000
 t erfcf -0x1p-26   -0x1p3  40000
 t erfcf  0          inf    40000
 
-L=2.0
+L=1.5
 t atan2 -10.0       10.0  50000
 t atan2  -1.0        1.0  40000
 t atan2   0.0        1.0  40000
 t atan2   1.0      100.0  40000
 t atan2   1e6       1e32  40000
 
-L=3.0
+L=2.4
 t atan2f -10.0       10.0  50000
 t atan2f  -1.0        1.0  40000
 t atan2f   0.0        1.0  40000
 t atan2f   1.0      100.0  40000
 t atan2f   1e6       1e32  40000
 
-L=3.0
+L=2.9
 t asinhf        0  0x1p-12  5000
 t asinhf  0x1p-12      1.0  50000
 t asinhf      1.0   0x1p11  50000
 t asinhf   0x1p11  0x1p127  20000
 
-L=2.0
+L=1.54
 t asinh -0x1p-26 0x1p-26   50000
 t asinh  0x1p-26     1.0   40000
 t asinh -0x1p-26    -1.0   10000
@@ -103,7 +103,7 @@ t asinh     -1.0  -100.0   10000
 t asinh    100.0     inf   50000
 t asinh   -100.0    -inf   10000
 
-L=2.0
+L=1.18
 t log1p    -10.0     10.0  10000
 t log1p      0.0  0x1p-23  50000
 t log1p  0x1p-23    0.001  50000
@@ -113,7 +113,7 @@ t log1p -0x1p-23   -0.001  50000
 t log1p   -0.001     -1.0  50000
 t log1p     -1.0      inf   5000
 
-L=2.0
+L=1.52
 t log1pf    -10.0     10.0  10000
 t log1pf      0.0  0x1p-23  50000
 t log1pf  0x1p-23    0.001  50000
@@ -122,6 +122,29 @@ t log1pf      0.0 -0x1p-23  50000
 t log1pf -0x1p-23   -0.001  50000
 t log1pf   -0.001     -1.0  50000
 t log1pf     -1.0      inf   5000
+
+L=2.80
+Ldir=
+t tanf  0      0xffff0000 10000
+t tanf  0x1p-127  0x1p-14 50000
+t tanf -0x1p-127 -0x1p-14 50000
+t tanf  0x1p-14   0.7     50000
+t tanf -0x1p-14  -0.7     50000
+t tanf  0.7       1.5     50000
+t tanf -0.7      -1.5     50000
+t tanf  1.5       0x1p17  50000
+t tanf -1.5      -0x1p17  50000
+t tanf  0x1p17    0x1p54  50000
+t tanf -0x1p17   -0x1p54  50000
+t tanf  0x1p54    inf     50000
+t tanf -0x1p54   -inf     50000
+
+L=2.30
+t acoshf 0      1         100
+t acoshf 1      2       10000
+t acoshf 2      0x1p64 100000
+t acoshf 0x1p64 inf    100000
+t acoshf -0     -inf    10000
 
 done
 
@@ -262,6 +285,17 @@ range_log2='
       100       inf  50000
 '
 
+range_tanf='
+     -0.0  -0x1p126  100
+ 0x1p-149  0x1p-126  4000
+ 0x1p-126   0x1p-23  50000
+  0x1p-23       0.7  50000
+      0.7       1.5  50000
+      1.5       100  50000
+      100    0x1p17  50000
+   0x1p17       inf  50000
+'
+
 range_sve_cosf='
  0    0xffff0000    10000
  0x1p-4    0x1p4    500000
@@ -350,35 +384,85 @@ range_sve_log='
       100       inf  50000
 '
 
-# error limits
-L_erfc=3.7
-L_erfcf=1.0
-L_log10=1.16
-L_log10f=2.81
-L_erf=1.76
-L_erff=1.5
-L_atan2=2.9
-L_atan=3.0
-L_atan2f=3.0
-L_atanf=3.0
-L_log1pf=2.0
-L_asinhf=2.2
-L_log2f=2.6
-# TODO tighten log2 bound
-L_log2=3
+range_sve_expf='
+  0        0x1p-23   40000
+  0x1p-23  1         50000
+  1        0x1p23    50000
+  0x1p23   inf       50000
+  -0       -0x1p-23  40000
+  -0x1p-23 -1        50000
+  -1       -0x1p23   50000
+  -0x1p23  -inf      50000
+'
 
-L_sve_cosf=1.6
-L_sve_cos=2.0
-L_sve_sinf=1.9
-L_sve_sin=2.0
+range_sve_erff='
+  0        0x1p-28   20000
+  0x1p-28  1         60000
+  1        0x1p28    60000
+  0x1p28   inf       20000
+  -0       -0x1p-28  20000
+  -0x1p-28 -1        60000
+  -1       -0x1p28   60000
+  -0x1p28  -inf      20000
+'
+
+range_sve_erf='
+  0        0x1p-28   20000
+  0x1p-28  1         60000
+  1        0x1p28    60000
+  0x1p28   inf       20000
+  -0       -0x1p-28  20000
+  -0x1p-28 -1        60000
+  -1       -0x1p28   60000
+  -0x1p28  -inf      20000
+'
+
+range_sve_tanf='
+     -0.0  -0x1p126  100
+ 0x1p-149  0x1p-126  4000
+ 0x1p-126   0x1p-23  50000
+  0x1p-23       0.7  50000
+      0.7       1.5  50000
+      1.5       100  50000
+      100    0x1p17  50000
+   0x1p17       inf  50000
+'
+
+# error limits
+L_erfc=3.14
+L_erfcf=0.26
+L_log10=1.97
+L_log10f=2.81
+L_erf=1.26
+L_erff=0.76
+# TODO tighten this once __v_atan2 is fixed
+L_atan2=2.9
+L_atan=2.15
+L_atan2f=2.46
+L_atanf=2.5
+L_log1pf=1.53
+L_asinhf=2.17
+L_log2f=2.10
+L_log2=2.09
+L_tanf=2.7
+
+L_sve_cosf=1.57
+L_sve_cos=1.61
+L_sve_sinf=1.40
+L_sve_sin=1.46
 L_sve_atanf=2.9
-L_sve_atan=2.5
-L_sve_atan2f=3.0
+L_sve_atan=1.7
+L_sve_atan2f=2.45
+# TODO tighten this once __sv_atan2 is fixed
 L_sve_atan2=2.0
-L_sve_log10=2.5
-L_sve_log10f=3.5
-L_sve_logf=3.5
-L_sve_log=2.5
+L_sve_log10=1.97
+L_sve_log10f=2.82
+L_sve_logf=2.85
+L_sve_log=1.68
+L_sve_expf=1.46
+L_sve_erff=0.76
+L_sve_erf=1.97
+L_sve_tanf=2.7
 
 while read G F R
 do
@@ -454,6 +538,10 @@ log2f  __s_log2f       $runs
 log2f  __v_log2f       $runv
 log2f  __vn_log2f      $runvn
 log2f  _ZGVnN4v_log2f  $runvn
+tanf  __s_tanf         $runs
+tanf  __v_tanf         $runv
+tanf  __vn_tanf        $runvn
+tanf  _ZGVnN4v_tanf    $runvn
 
 if [ $WANT_SVE_MATH -eq 1 ]; then
 sve_cosf     __sv_cosf         $runsv
@@ -468,6 +556,12 @@ sve_log10f   __sv_log10f       $runsv
 sve_log10f   _ZGVsMxv_log10f   $runsv
 sve_logf     __sv_logf         $runsv
 sve_logf     _ZGVsMxv_logf     $runsv
+sve_expf     __sv_expf         $runsv
+sve_expf     _ZGVsMxv_expf     $runsv
+sve_erff     __sv_erff         $runsv
+sve_erff     _ZGVsMxv_erff     $runsv
+sve_tanf    __sv_tanf          $runsv
+sve_tanf    _ZGVsMxv_tanf      $runsv
 
 sve_cos    __sv_cos        $runsv
 sve_cos    _ZGVsMxv_cos    $runsv
@@ -481,6 +575,8 @@ sve_log10  __sv_log10      $runsv
 sve_log10  _ZGVsMxv_log10  $runsv
 sve_log    __sv_log        $runsv
 sve_log    _ZGVsMxv_log    $runsv
+sve_erf    __sv_erf        $runsv
+sve_erf    _ZGVsMxv_erf    $runsv
 fi
 EOF
 
