@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
+#include <stdbool.h>
+
 #if USE_MPFR
 static int sincos_mpfr_sin(mpfr_t y, const mpfr_t x, mpfr_rnd_t r) {
   mpfr_cos(y, x, r);
@@ -15,7 +17,48 @@ static int sincos_mpfr_cos(mpfr_t y, const mpfr_t x, mpfr_rnd_t r) {
   mpfr_sin(y, x, r);
   return mpfr_cos(y, x, r);
 }
+static int wrap_mpfr_powi(mpfr_t ret, const mpfr_t x, const mpfr_t y, mpfr_rnd_t rnd) {
+  mpfr_t y2;
+  mpfr_init(y2);
+  mpfr_trunc(y2, y);
+  return mpfr_pow(ret, x, y2, rnd);
+}
 #endif
+
+/* Our implementations of powi/powk are too imprecise to verify
+   against any established pow implementation. Instead we have the
+   following simple implementation, against which it is enough to
+   maintain bitwise reproducibility. Note the test framework expects
+   the reference impl to be of higher precision than the function
+   under test. For instance this means that the reference for
+   double-precision powi will be passed a long double, so to check
+   bitwise reproducibility we have to cast it back down to
+   double. This is fine since a round-trip to higher precision and
+   back down is correctly rounded.  */
+#define DECL_POW_INT_REF(NAME, DBL_T, FLT_T, INT_T)                            \
+  static DBL_T NAME (DBL_T in_val, DBL_T y)                                    \
+  {                                                                            \
+    INT_T n = (INT_T) round (y);                                               \
+    FLT_T acc = 1.0;                                                           \
+    bool want_recip = n < 0;                                                   \
+    n = n < 0 ? -n : n;                                                        \
+                                                                               \
+    for (FLT_T c = in_val; n; c *= c, n >>= 1)                                 \
+      {                                                                        \
+        if (n & 0x1)                                                           \
+          {                                                                    \
+            acc *= c;                                                          \
+          }                                                                    \
+      }                                                                        \
+    if (want_recip)                                                            \
+      {                                                                        \
+        acc = 1.0 / acc;                                                       \
+      }                                                                        \
+    return acc;                                                                \
+  }
+
+DECL_POW_INT_REF(ref_powif, double, float, int)
+DECL_POW_INT_REF(ref_powi, long double, double, int)
 
 #define VF1_WRAP(func) static float v_##func##f(float x) { return __v_##func##f(argf(x))[0]; }
 #define VF2_WRAP(func) static float v_##func##f(float x, float y) { return __v_##func##f(argf(x), argf(y))[0]; }
@@ -32,10 +75,28 @@ static int sincos_mpfr_cos(mpfr_t y, const mpfr_t x, mpfr_rnd_t r) {
 #define ZVD1_WRAP(func) static double Z_##func(double x) { return _ZGVnN2v_##func(argd(x))[0]; }
 #define ZVD2_WRAP(func) static double Z_##func(double x, double y) { return _ZGVnN2vv_##func(argd(x), argd(y))[0]; }
 
-#define ZVNF1_WRAP(func) VNF1_WRAP(func) ZVF1_WRAP(func)
-#define ZVNF2_WRAP(func) VNF2_WRAP(func) ZVF2_WRAP(func)
-#define ZVND1_WRAP(func) VND1_WRAP(func) ZVD1_WRAP(func)
-#define ZVND2_WRAP(func) VND2_WRAP(func) ZVD2_WRAP(func)
+#ifdef __vpcs
+
+#define ZVNF1_WRAP(func) VF1_WRAP(func) VNF1_WRAP(func) ZVF1_WRAP(func)
+#define ZVNF2_WRAP(func) VF2_WRAP(func) VNF2_WRAP(func) ZVF2_WRAP(func)
+#define ZVND1_WRAP(func) VD1_WRAP(func) VND1_WRAP(func) ZVD1_WRAP(func)
+#define ZVND2_WRAP(func) VD2_WRAP(func) VND2_WRAP(func) ZVD2_WRAP(func)
+
+#elif __aarch64__
+
+#define ZVNF1_WRAP(func) VF1_WRAP(func) VNF1_WRAP(func)
+#define ZVNF2_WRAP(func) VF2_WRAP(func) VNF2_WRAP(func)
+#define ZVND1_WRAP(func) VD1_WRAP(func) VND1_WRAP(func)
+#define ZVND2_WRAP(func) VD2_WRAP(func) VND2_WRAP(func)
+
+#else
+
+#define ZVNF1_WRAP(func) VF1_WRAP(func)
+#define ZVNF2_WRAP(func) VF2_WRAP(func)
+#define ZVND1_WRAP(func) VD1_WRAP(func)
+#define ZVND2_WRAP(func) VD2_WRAP(func)
+
+#endif
 
 #define SVF1_WRAP(func) static float sv_##func##f(float x) { return svretf(__sv_##func##f_x(svargf(x), svptrue_b32())); }
 #define SVF2_WRAP(func) static float sv_##func##f(float x, float y) { return svretf(__sv_##func##f_x(svargf(x), svargf(y), svptrue_b32())); }
@@ -53,39 +114,27 @@ static int sincos_mpfr_cos(mpfr_t y, const mpfr_t x, mpfr_rnd_t r) {
 #define ZSVND2_WRAP(func) SVD2_WRAP(func) ZSVD2_WRAP(func)
 
 /* Wrappers for vector functions.  */
-#if __aarch64__ && WANT_VMATH
-VF1_WRAP(asinh)
-VF1_WRAP(atan)
-VF2_WRAP(atan2)
-VF1_WRAP(erf)
-VF1_WRAP(erfc)
-VF1_WRAP(log10)
-VF1_WRAP(log1p)
-VF1_WRAP(log2)
-VF1_WRAP(tan)
-VD1_WRAP(atan)
-VD2_WRAP(atan2)
-VD1_WRAP(erf)
-VD1_WRAP(erfc)
-VD1_WRAP(log10)
-VD1_WRAP(log2)
-#ifdef __vpcs
+#if WANT_VMATH
 ZVNF1_WRAP(asinh)
 ZVNF1_WRAP(atan)
 ZVNF2_WRAP(atan2)
+ZVNF1_WRAP(cosh)
 ZVNF1_WRAP(erf)
 ZVNF1_WRAP(erfc)
+ZVNF1_WRAP(expm1)
 ZVNF1_WRAP(log10)
 ZVNF1_WRAP(log1p)
 ZVNF1_WRAP(log2)
+ZVNF1_WRAP(sinh)
 ZVNF1_WRAP(tan)
 ZVND1_WRAP(atan)
 ZVND2_WRAP(atan2)
 ZVND1_WRAP(erf)
 ZVND1_WRAP(erfc)
+ZVND1_WRAP(expm1)
 ZVND1_WRAP(log10)
+ZVND1_WRAP(log1p)
 ZVND1_WRAP(log2)
-#endif
 #if WANT_SVE_MATH
 ZSVNF2_WRAP(atan2)
 ZSVNF1_WRAP(atan)
@@ -96,14 +145,19 @@ ZSVNF1_WRAP(log)
 ZSVNF1_WRAP(log10)
 ZSVNF1_WRAP(sin)
 ZSVNF1_WRAP(tan)
+static float Z_sv_powi(float x, float y) { return svretf(_ZGVsMxvv_powi(svargf(x), svdup_n_s32((int)round(y)), svptrue_b32())); }
+static float sv_powif(float x, float y) { return svretf(__sv_powif_x(svargf(x), svdup_n_s32((int)round(y)), svptrue_b32())); }
 
 ZSVND2_WRAP(atan2)
 ZSVND1_WRAP(atan)
 ZSVND1_WRAP(cos)
 ZSVND1_WRAP(erf)
+ZSVND1_WRAP(erfc)
 ZSVND1_WRAP(log)
 ZSVND1_WRAP(log10)
 ZSVND1_WRAP(sin)
+static double Z_sv_powk(double x, double y) { return svretd(_ZGVsMxvv_powk(svargd(x), svdup_n_s64((long)round(y)), svptrue_b64())); }
+static double sv_powi(double x, double y) { return svretd(__sv_powi_x(svargd(x), svdup_n_s64((long)round(y)), svptrue_b64())); }
 #endif
 #endif
 // clang-format on

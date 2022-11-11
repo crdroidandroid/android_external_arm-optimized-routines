@@ -230,6 +230,11 @@ v_to_f32_s32 (v_s32_t x)
 {
   return x;
 }
+static inline v_s32_t
+v_to_s32_f32 (v_f32_t x)
+{
+  return x;
+}
 static inline v_f32_t
 v_to_f32_u32 (v_u32_t x)
 {
@@ -392,6 +397,12 @@ v_to_f64_s64 (v_s64_t x)
 }
 static inline v_f64_t
 v_to_f64_u64 (v_u64_t x)
+{
+  return x;
+}
+
+static inline v_s64_t
+v_to_s64_f64 (v_f64_t x)
 {
   return x;
 }
@@ -581,6 +592,11 @@ v_to_f32_s32 (v_s32_t x)
 {
   return (v_f32_t){x[0], x[1], x[2], x[3]};
 }
+static inline v_s32_t
+v_to_s32_f32 (v_f32_t x)
+{
+  return vcvtq_s32_f32 (x);
+}
 static inline v_f32_t
 v_to_f32_u32 (v_u32_t x)
 {
@@ -750,6 +766,11 @@ static inline v_f64_t
 v_to_f64_u64 (v_u64_t x)
 {
   return (v_f64_t){x[0], x[1]};
+}
+static inline v_s64_t
+v_to_s64_f64 (v_f64_t x)
+{
+  return vcvtq_s64_f64 (x);
 }
 /* reinterpret as type1 from type2.  */
 static inline v_u64_t

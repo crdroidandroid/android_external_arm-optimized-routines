@@ -538,4 +538,19 @@ extern const struct sv_log_data
 #define SV_EXPF_POLY_ORDER 6
 extern const float __sv_expf_poly[SV_EXPF_POLY_ORDER - 1] HIDDEN;
 
+#define EXPM1F_POLY_ORDER 5
+extern const float __expm1f_poly[EXPM1F_POLY_ORDER] HIDDEN;
+
+#define EXPF_TABLE_BITS 5
+#define EXPF_POLY_ORDER 3
+extern const struct expf_data
+{
+  uint64_t tab[1 << EXPF_TABLE_BITS];
+  double invln2_scaled;
+  double poly_scaled[EXPF_POLY_ORDER];
+} __expf_data HIDDEN;
+
+#define EXPM1_POLY_ORDER 11
+extern const double __expm1_poly[EXPM1_POLY_ORDER] HIDDEN;
+
 #endif

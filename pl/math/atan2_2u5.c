@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
+#include <stdbool.h>
+
 #include "math_config.h"
 #include "atan_common.h"
 
@@ -25,20 +27,13 @@ static inline int64_t
 biased_exponent (double f)
 {
   uint64_t fi = asuint64 (f);
-  int64_t ex = (fi & ExpMask) >> 52;
-  if (unlikely (ex == 0))
-    {
-      /* Subnormal case - we still need to get the exponent right for subnormal
-	 numbers as division may take us back inside the normal range.  */
-      return ex - __builtin_clz (fi << 12);
-    }
-  return ex;
+  return (fi & ExpMask) >> 52;
 }
 
-/* Fast implementation of scalar atan2. Errors are greatest when y and
-   x are reasonably close together. Maximum observed error is 2.0 ulps:
-   atan2(0x1.8d9621df2f329p+2, 0x1.884cf49437972p+2)
-   got 0x1.958cd0e8c618bp-1 want 0x1.958cd0e8c618dp-1.  */
+/* Fast implementation of scalar atan2. Largest errors are when y and x are
+   close together. The greatest observed error is 2.28 ULP:
+   atan2(-0x1.5915b1498e82fp+732, 0x1.54d11ef838826p+732)
+   got -0x1.954f42f1fa841p-1 want -0x1.954f42f1fa843p-1.  */
 double
 atan2 (double y, double x)
 {
@@ -51,16 +46,11 @@ atan2 (double y, double x)
   uint64_t iax = ix & ~SignMask;
   uint64_t iay = iy & ~SignMask;
 
-  /* x or y is NaN.  */
-  if ((iax > 0x7ff0000000000000) || (iay > 0x7ff0000000000000))
-    {
-      if (unlikely ((iax > 0x7f80000000000000) && (iay > 0x7f80000000000000)))
-	{
-	  /* Both are NaN. Force sign to be +ve.  */
-	  return (asdouble (iax) + asdouble (iay));
-	}
-      return x + y;
-    }
+  bool xisnan = isnan (x);
+  if (unlikely (isnan (y) && !xisnan))
+    return __math_invalid (y);
+  if (unlikely (xisnan))
+    return __math_invalid (x);
 
   /* m = 2 * sign(x) + sign(y).  */
   uint32_t m = ((iy >> 63) & 1) | ((ix >> 62) & 2);
