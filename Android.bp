@@ -111,6 +111,8 @@ cc_library_static {
                 "string/aarch64/memchr-mte.S",
                 "string/aarch64/memchr.S",
                 "string/aarch64/memcmp.S",
+                "string/aarch64/memcpy-advsimd.S",
+                "string/aarch64/memcpy.S",
                 "string/aarch64/memrchr.S",
                 "string/aarch64/stpcpy.S",
                 "string/aarch64/strchrnul-mte.S",
