@@ -114,6 +114,7 @@ cc_library_static {
                 "string/aarch64/memcpy-advsimd.S",
                 "string/aarch64/memcpy.S",
                 "string/aarch64/memrchr.S",
+                "string/aarch64/memset.S",
                 "string/aarch64/stpcpy.S",
                 "string/aarch64/strchrnul-mte.S",
                 "string/aarch64/strchrnul.S",
@@ -130,6 +131,7 @@ cc_library_static {
             ],
             asflags: [
                 "-D__memcmp_aarch64=memcmp",
+                "-D__memset_aarch64=memset",
                 "-D__memrchr_aarch64=memrchr",
                 "-D__strcmp_aarch64=strcmp",
                 "-D__strncmp_aarch64=strncmp",
