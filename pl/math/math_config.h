@@ -489,7 +489,7 @@ extern const struct v_log2f_data
 } __v_log2f_data HIDDEN;
 
 #define V_LOG2_TABLE_BITS 7
-#define V_LOG2_POLY_ORDER 7
+#define V_LOG2_POLY_ORDER 6
 extern const struct v_log2_data
 {
   double poly[V_LOG2_POLY_ORDER - 1];
@@ -552,5 +552,11 @@ extern const struct expf_data
 
 #define EXPM1_POLY_ORDER 11
 extern const double __expm1_poly[EXPM1_POLY_ORDER] HIDDEN;
+
+extern const struct cbrtf_data
+{
+  float poly[4];
+  float table[5];
+} __cbrtf_data HIDDEN;
 
 #endif

@@ -179,7 +179,6 @@ t coshf -0             -0x1p-63         100
 t coshf -0             -0x1.5a92d8p+6   80000
 t coshf -0x1.5a92d8p+6 -inf             2000
 
-
 L=1.68
 t expm1  0                     0x1p-51              1000
 t expm1 -0                    -0x1p-51              1000
@@ -187,6 +186,34 @@ t expm1  0x1p-51               0x1.63108c75a1937p+9 100000
 t expm1 -0x1p-51              -0x1.740bf7c0d927dp+9 100000
 t expm1  0x1.63108c75a1937p+9  inf                  100
 t expm1 -0x1.740bf7c0d927dp+9 -inf                  100
+
+L=2.08
+t sinh  0                    0x1p-51             100
+t sinh -0                   -0x1p-51             100
+t sinh  0x1p-51              0x1.62e42fefa39fp+9 100000
+t sinh -0x1p-51             -0x1.62e42fefa39fp+9 100000
+t sinh  0x1.62e42fefa39fp+9  inf                 1000
+t sinh -0x1.62e42fefa39fp+9 -inf                 1000
+
+L=1.43
+t cosh  0                     0x1.61da04cbafe44p+9 100000
+t cosh -0                    -0x1.61da04cbafe44p+9 100000
+t cosh  0x1.61da04cbafe44p+9  0x1p10               1000
+t cosh -0x1.61da04cbafe44p+9 -0x1p10               1000
+t cosh  0x1p10                inf                  100
+t cosh -0x1p10               -inf                  100
+
+L=2.59
+t atanhf  0        0x1p-12 500
+t atanhf  0x1p-12  1       200000
+t atanhf  1        inf     1000
+t atanhf -0       -0x1p-12 500
+t atanhf -0x1p-12 -1       200000
+t atanhf -1       -inf     1000
+
+L=1.03
+t cbrtf  0  inf 1000000
+t cbrtf -0 -inf 1000000
 
 done
 
@@ -393,6 +420,36 @@ range_expm1='
  -0x1.740bf7c0d927dp+9 -inf                  100
 '
 
+range_sinh='
+  0                    0x1p-51             100
+ -0                   -0x1p-51             100
+  0x1p-51              0x1.62e42fefa39fp+9 100000
+ -0x1p-51             -0x1.62e42fefa39fp+9 100000
+  0x1.62e42fefa39fp+9  inf                 1000
+ -0x1.62e42fefa39fp+9 -inf                 1000
+'
+
+range_cosh='
+  0        0x1.6p9   100000
+ -0       -0x1.6p9   100000
+  0x1.6p9  inf       1000
+ -0x1.6p9 -inf       1000
+'
+
+range_atanhf='
+  0        0x1p-12 500
+  0x1p-12  1       200000
+  1        inf     1000
+ -0       -0x1p-12 500
+ -0x1p-12 -1       200000
+ -1       -inf     1000
+'
+
+range_cbrtf='
+  0  inf 1000000
+ -0 -inf 1000000
+'
+
 range_sve_cosf='
  0    0xffff0000    10000
  0x1p-4    0x1p4    500000
@@ -543,7 +600,7 @@ L_erf=1.26
 L_erff=0.76
 # TODO tighten this once __v_atan2 is fixed
 L_atan2=2.9
-L_atan=1.73
+L_atan=1.78
 L_atan2f=2.46
 L_atanf=2.5
 L_log1pf=1.53
@@ -556,13 +613,17 @@ L_expm1f=1.02
 L_sinhf=1.76
 L_coshf=1.89
 L_expm1=1.68
+L_sinh=2.08
+L_cosh=1.43
+L_atanhf=2.59
+L_cbrtf=1.03
 
 L_sve_cosf=1.57
 L_sve_cos=1.61
 L_sve_sinf=1.40
 L_sve_sin=2.03
 L_sve_atanf=2.9
-L_sve_atan=1.73
+L_sve_atan=1.78
 L_sve_atan2f=2.45
 L_sve_atan2=1.73
 L_sve_log10=1.97
@@ -575,7 +636,7 @@ L_sve_erf=1.97
 L_sve_tanf=2.7
 L_sve_erfc=3.15
 
-while read G F R D
+while read G F R D A
 do
 	[ "$R" = 1 ] && { [[ $G != sve_* ]] || [ $WANT_SVE_MATH -eq 1 ]; } || continue
 	case "$G" in \#*) continue ;; esac
@@ -597,13 +658,17 @@ do
 		if [ $WANT_ERRNO -eq 1 ]; then
 			if [ "$D" = "fenv" ]; then
 				f=""
+			elif [ "$D" = "nofenv" ]; then
+				# Need to pass this if you want additional
+				# arguments but keep fenv checking disabled.
+				f="-f"
 			elif [ ! -z "$D" ]; then
 				echo "Unrecognised 4th argument: $D"
 				exit 1
 			fi
 		fi
 		case "$X" in \#*) continue ;; esac
-		t $f $F $X
+		t $A $f $F $X
 	done << EOF
 $range
 EOF
@@ -638,6 +703,14 @@ expm1  __s_expm1       $runs    fenv
 expm1  __v_expm1       $runv    fenv
 expm1  __vn_expm1      $runvn   fenv
 expm1  _ZGVnN2v_expm1  $runvn   fenv
+sinh   __s_sinh        $runs    fenv
+sinh   __v_sinh        $runv    fenv
+sinh   __vn_sinh       $runvn   fenv
+sinh   _ZGVnN2v_sinh   $runvn   fenv
+cosh   __s_cosh        $runs    fenv
+cosh   __v_cosh        $runv    fenv
+cosh   __vn_cosh       $runvn   fenv
+cosh   _ZGVnN2v_cosh   $runvn   fenv
 
 atanf  __s_atanf       $runs
 atanf  __v_atanf       $runv
@@ -691,6 +764,14 @@ coshf  __s_coshf       $runs    fenv
 coshf  __v_coshf       $runv    fenv
 coshf  __vn_coshf      $runvn   fenv
 coshf  _ZGVnN4v_coshf  $runvn   fenv
+atanhf __s_atanhf      $runs    fenv -c 0
+atanhf __v_atanhf      $runv    fenv -c 0
+atanhf __vn_atanhf     $runvn   fenv -c 0
+atanhf _ZGVnN4v_atanhf $runvn   fenv -c 0
+cbrtf  __s_cbrtf       $runs    fenv
+cbrtf  __v_cbrtf       $runv    fenv
+cbrtf  __vn_cbrtf      $runvn   fenv
+cbrtf  _ZGVnN4v_cbrtf  $runvn   fenv
 
 sve_cosf     __sv_cosf         $runsv
 sve_cosf     _ZGVsMxv_cosf     $runsv
