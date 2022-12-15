@@ -189,7 +189,7 @@ cc_library_static {
             ],
         },
     },
-    visibility: ["//packages/modules/Virtualization:__subpackages__"],
+    visibility: ["//bionic/libc"],
 }
 
 // adb shell "/data/nativetest64/mathtest/mathtest /data/nativetest64/mathtest/test/testcases/directed/*"
