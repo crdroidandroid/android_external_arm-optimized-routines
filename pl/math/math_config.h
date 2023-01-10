@@ -1,7 +1,7 @@
 /*
  * Configuration for math routines.
  *
- * Copyright (c) 2017-2022, Arm Limited.
+ * Copyright (c) 2017-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
@@ -23,6 +23,11 @@
    libraries do not set errno, so this is 0 by default.  It may need to be
    set to 1 if math.h has (math_errhandling & MATH_ERRNO) != 0.  */
 # define WANT_ERRNO 0
+#endif
+#ifndef WANT_SIMD_EXCEPT
+/* If defined to 1, trigger fp exceptions in vector routines, consistently with
+   behaviour expected from the corresponding scalar routine.  */
+#define WANT_SIMD_EXCEPT 0
 #endif
 
 /* Compiler can inline round as a single instruction.  */
@@ -467,20 +472,23 @@ extern const struct log1pf_data
   float coeffs[LOG1PF_NCOEFFS];
 } __log1pf_data HIDDEN;
 
-#define V_LOG2F_TABLE_BITS 4
-#define V_LOG2F_POLY_ORDER 4
+#define TANF_P_POLY_NCOEFFS 7
+/* cotan approach needs order 3 on [0, pi/4] to reach <3.5ulps.  */
+#define TANF_Q_POLY_NCOEFFS 4
+extern const struct tanf_poly_data
+{
+  float poly_tan[TANF_P_POLY_NCOEFFS];
+  float poly_cotan[TANF_Q_POLY_NCOEFFS];
+} __tanf_poly_data HIDDEN;
+
+#define V_LOG2F_POLY_NCOEFFS 9
 extern const struct v_log2f_data
 {
-  struct
-  {
-    /* Pad with dummy for quad-aligned memory access.  */
-    float invc_hi, invc_lo, logc, dummy;
-  } tab[1 << V_LOG2F_TABLE_BITS];
-  float poly[V_LOG2F_POLY_ORDER];
+  float poly[V_LOG2F_POLY_NCOEFFS];
 } __v_log2f_data HIDDEN;
 
 #define V_LOG2_TABLE_BITS 7
-#define V_LOG2_POLY_ORDER 7
+#define V_LOG2_POLY_ORDER 6
 extern const struct v_log2_data
 {
   double poly[V_LOG2_POLY_ORDER - 1];
@@ -495,5 +503,65 @@ extern const struct sv_sinf_data
 {
   float coeffs[V_SINF_NCOEFFS];
 } __sv_sinf_data HIDDEN;
+
+#define V_LOG10_TABLE_BITS 7
+#define V_LOG10_POLY_ORDER 6
+extern const struct v_log10_data
+{
+  struct
+  {
+    double invc, log10c;
+  } tab[1 << V_LOG10_TABLE_BITS];
+  double poly[V_LOG10_POLY_ORDER - 1];
+  double invln10, log10_2;
+} __v_log10_data HIDDEN;
+
+#define V_LOG10F_POLY_ORDER 9
+extern const float __v_log10f_poly[V_LOG10F_POLY_ORDER - 1] HIDDEN;
+
+#define SV_LOGF_POLY_ORDER 8
+extern const float __sv_logf_poly[SV_LOGF_POLY_ORDER - 1] HIDDEN;
+
+#define SV_LOG_POLY_ORDER 6
+#define SV_LOG_TABLE_BITS 7
+extern const struct sv_log_data
+{
+  double invc[1 << SV_LOG_TABLE_BITS];
+  double logc[1 << SV_LOG_TABLE_BITS];
+  double poly[SV_LOG_POLY_ORDER - 1];
+} __sv_log_data HIDDEN;
+
+#ifndef SV_EXPF_USE_FEXPA
+#define SV_EXPF_USE_FEXPA 0
+#endif
+#define SV_EXPF_POLY_ORDER 6
+extern const float __sv_expf_poly[SV_EXPF_POLY_ORDER - 1] HIDDEN;
+
+#define EXPM1F_POLY_ORDER 5
+extern const float __expm1f_poly[EXPM1F_POLY_ORDER] HIDDEN;
+
+#define EXPF_TABLE_BITS 5
+#define EXPF_POLY_ORDER 3
+extern const struct expf_data
+{
+  uint64_t tab[1 << EXPF_TABLE_BITS];
+  double invln2_scaled;
+  double poly_scaled[EXPF_POLY_ORDER];
+} __expf_data HIDDEN;
+
+#define EXPM1_POLY_ORDER 11
+extern const double __expm1_poly[EXPM1_POLY_ORDER] HIDDEN;
+
+extern const struct cbrtf_data
+{
+  float poly[4];
+  float table[5];
+} __cbrtf_data HIDDEN;
+
+extern const struct cbrt_data
+{
+  double poly[4];
+  double table[5];
+} __cbrt_data HIDDEN;
 
 #endif

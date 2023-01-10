@@ -1,11 +1,14 @@
 /*
  * Single-precision SVE sin(x) function.
  *
- * Copyright (c) 2019-2022, Arm Limited.
+ * Copyright (c) 2019-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
 #include "sv_math.h"
+#include "pl_sig.h"
+#include "pl_test.h"
+
 #if SV_SUPPORTED
 
 #define A3 (sv_f32 (__sv_sinf_data.coeffs[3]))
@@ -72,6 +75,10 @@ __sv_sinf_x (sv_f32_t x, const svbool_t pg)
   return y;
 }
 
-strong_alias (__sv_sinf_x, _ZGVsMxv_sinf)
+PL_ALIAS (__sv_sinf_x, _ZGVsMxv_sinf)
 
+PL_SIG (SV, F, 1, sin, -3.1, 3.1)
+PL_TEST_ULP (__sv_sinf, 1.40)
+PL_TEST_INTERVAL (__sv_sinf, 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (__sv_sinf, 0x1p-4, 0x1p4, 500000)
 #endif

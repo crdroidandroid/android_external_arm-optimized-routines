@@ -1,17 +1,20 @@
 /*
  * Single-precision asinh(x) function.
- * Copyright (c) 2022, Arm Limited.
+ *
+ * Copyright (c) 2022-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
+#include "estrinf.h"
 #include "math_config.h"
+#include "pl_sig.h"
+#include "pl_test.h"
 
 #define AbsMask (0x7fffffff)
 #define SqrtFltMax (0x1.749e96p+10f)
 #define Ln2 (0x1.62e4p-1f)
 #define One (0x3f8)
 #define ExpM12 (0x398)
-#define QNaN (0x7fc)
 
 #define C(i) __asinhf_data.coeffs[i]
 
@@ -45,25 +48,16 @@ asinhf (float x)
   float ax = asfloat (ia);
   uint32_t sign = ix & ~AbsMask;
 
-  if (ia12 < ExpM12 || ia12 == QNaN)
-    {
-      return x;
-    }
+  if (unlikely (ia12 < ExpM12 || ia == 0x7f800000))
+    return x;
+
+  if (unlikely (ia12 >= 0x7f8))
+    return __math_invalidf (x);
 
   if (ia12 < One)
     {
       float x2 = ax * ax;
-      float x4 = x2 * x2;
-
-      float p_01 = fmaf (ax, C (1), C (0));
-      float p_23 = fmaf (ax, C (3), C (2));
-      float p_45 = fmaf (ax, C (5), C (4));
-      float p_67 = fmaf (ax, C (7), C (6));
-
-      float p_03 = fmaf (x2, p_23, p_01);
-      float p_47 = fmaf (x2, p_67, p_45);
-
-      float p = fmaf (x4, p_47, p_03);
+      float p = ESTRIN_7 (ax, x2, x2 * x2, C);
       float y = fmaf (x2, p, ax);
       return asfloat (asuint (y) | sign);
     }
@@ -75,3 +69,10 @@ asinhf (float x)
 
   return asfloat (asuint (optr_aor_log_f32 (ax + sqrtf (ax * ax + 1))) | sign);
 }
+
+PL_SIG (S, F, 1, asinh, -10.0, 10.0)
+PL_TEST_ULP (asinhf, 2.9)
+PL_TEST_INTERVAL (asinhf, 0, 0x1p-12, 5000)
+PL_TEST_INTERVAL (asinhf, 0x1p-12, 1.0, 50000)
+PL_TEST_INTERVAL (asinhf, 1.0, 0x1p11, 50000)
+PL_TEST_INTERVAL (asinhf, 0x1p11, 0x1p127, 20000)

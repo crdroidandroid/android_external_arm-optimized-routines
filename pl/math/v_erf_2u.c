@@ -1,13 +1,16 @@
 /*
  * Double-precision vector erf(x) function.
  *
- * Copyright (c) 2019-2022, Arm Limited.
+ * Copyright (c) 2019-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
+#include "v_math.h"
 #include "include/mathlib.h"
 #include "math_config.h"
-#include "v_math.h"
+#include "pl_sig.h"
+#include "pl_test.h"
+
 #if V_SUPPORTED
 
 #define AbsMask v_u64 (0x7fffffffffffffff)
@@ -101,4 +104,13 @@ v_f64_t V_NAME (erf) (v_f64_t x)
   return y;
 }
 VPCS_ALIAS
+
+PL_SIG (V, D, 1, erf, -6.0, 6.0)
+PL_TEST_ULP (V_NAME (erf), 1.26)
+PL_TEST_INTERVAL (V_NAME (erf), 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (V_NAME (erf), 0x1p-127, 0x1p-26, 40000)
+PL_TEST_INTERVAL (V_NAME (erf), -0x1p-127, -0x1p-26, 40000)
+PL_TEST_INTERVAL (V_NAME (erf), 0x1p-26, 0x1p3, 40000)
+PL_TEST_INTERVAL (V_NAME (erf), -0x1p-26, -0x1p3, 40000)
+PL_TEST_INTERVAL (V_NAME (erf), 0, inf, 40000)
 #endif

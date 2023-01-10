@@ -1,30 +1,20 @@
 /*
  * Single-precision vector log10 function.
  *
- * Copyright (c) 2020-2022, Arm Limited.
+ * Copyright (c) 2020-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "mathlib.h"
 #include "v_math.h"
+#include "mathlib.h"
+#include "pl_sig.h"
+#include "pl_test.h"
+
 #if V_SUPPORTED
 
-static const float Poly[] = {
-  /* Use order 9 for log10(1+x), i.e. order 8 for log10(1+x)/x, with x in
-     [-1/3, 1/3] (offset=2/3). Max. relative error: 0x1.068ee468p-25.  */
-  -0x1.bcb79cp-3f, 0x1.2879c8p-3f, -0x1.bcd472p-4f, 0x1.6408f8p-4f,
-  -0x1.246f8p-4f,  0x1.f0e514p-5f, -0x1.0fc92cp-4f, 0x1.f5f76ap-5f};
-#define P8 v_f32 (Poly[7])
-#define P7 v_f32 (Poly[6])
-#define P6 v_f32 (Poly[5])
-#define P5 v_f32 (Poly[4])
-#define P4 v_f32 (Poly[3])
-#define P3 v_f32 (Poly[2])
-#define P2 v_f32 (Poly[1])
-#define P1 v_f32 (Poly[0])
+#define P(i) v_f32 (__v_log10f_poly[i])
 
 #define Ln2 v_f32 (0x1.62e43p-1f) /* 0x3f317218.  */
-#define Log10_2 v_f32 (0x1.344136p-2f)
 #define InvLn10 v_f32 (0x1.bcb7b2p-2f)
 #define Min v_u32 (0x00800000)
 #define Max v_u32 (0x7f800000)
@@ -64,12 +54,12 @@ v_f32_t V_NAME (log10f) (v_f32_t x)
 
   /* y = log10(1+r) + n*log10(2).  */
   r2 = r * r;
-  /* (n*ln2 + r)*InvLn10 + r2*(P1 + r*P2 + r2*(P3 + r*P4 + r2*(P5 + r*P6 +
-     r2*(P7+r*P8))).  */
-  o = v_fma_f32 (P8, r, P7);
-  p = v_fma_f32 (P6, r, P5);
-  q = v_fma_f32 (P4, r, P3);
-  y = v_fma_f32 (P2, r, P1);
+  /* (n*ln2 + r)*InvLn10 + r2*(P0 + r*P1 + r2*(P2 + r*P3 + r2*(P4 + r*P5 +
+     r2*(P6+r*P7))).  */
+  o = v_fma_f32 (P (7), r, P (6));
+  p = v_fma_f32 (P (5), r, P (4));
+  q = v_fma_f32 (P (3), r, P (2));
+  y = v_fma_f32 (P (1), r, P (0));
   p = v_fma_f32 (o, r2, p);
   q = v_fma_f32 (p, r2, q);
   y = v_fma_f32 (q, r2, y);
@@ -83,4 +73,10 @@ v_f32_t V_NAME (log10f) (v_f32_t x)
   return y;
 }
 VPCS_ALIAS
+
+PL_SIG (V, F, 1, log10, 0.01, 11.1)
+PL_TEST_ULP (V_NAME (log10f), 2.81)
+PL_TEST_EXPECT_FENV_ALWAYS (V_NAME (log10f))
+PL_TEST_INTERVAL (V_NAME (log10f), 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (V_NAME (log10f), 0x1p-4, 0x1p4, 500000)
 #endif

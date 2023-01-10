@@ -1,11 +1,14 @@
 /*
  * Double-precision vector atan2(x) function.
  *
- * Copyright (c) 2021-2022, Arm Limited.
+ * Copyright (c) 2021-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
 #include "v_math.h"
+#include "pl_sig.h"
+#include "pl_test.h"
+
 #if V_SUPPORTED
 
 #include "atan_common.h"
@@ -75,4 +78,13 @@ v_f64_t V_NAME (atan2) (v_f64_t y, v_f64_t x)
 }
 VPCS_ALIAS
 
+/* Arity of 2 means no mathbench entry emitted. See test/mathbench_funcs.h.  */
+PL_SIG (V, D, 2, atan2)
+// TODO tighten this once __v_atan2 is fixed
+PL_TEST_ULP (V_NAME (atan2), 2.9)
+PL_TEST_INTERVAL (V_NAME (atan2), -10.0, 10.0, 50000)
+PL_TEST_INTERVAL (V_NAME (atan2), -1.0, 1.0, 40000)
+PL_TEST_INTERVAL (V_NAME (atan2), 0.0, 1.0, 40000)
+PL_TEST_INTERVAL (V_NAME (atan2), 1.0, 100.0, 40000)
+PL_TEST_INTERVAL (V_NAME (atan2), 1e6, 1e32, 40000)
 #endif

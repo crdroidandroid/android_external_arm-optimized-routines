@@ -1,13 +1,16 @@
 /*
  * Single-precision vector erf(x) function.
  *
- * Copyright (c) 2020-2022, Arm Limited.
+ * Copyright (c) 2020-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
+#include "v_math.h"
 #include "include/mathlib.h"
 #include "math_config.h"
-#include "v_math.h"
+#include "pl_sig.h"
+#include "pl_test.h"
+
 #if V_SUPPORTED
 
 VPCS_ATTR v_f32_t V_NAME (expf) (v_f32_t);
@@ -101,4 +104,13 @@ v_f32_t V_NAME (erff) (v_f32_t x)
   return y;
 }
 VPCS_ALIAS
+
+PL_SIG (V, F, 1, erf, -4.0, 4.0)
+PL_TEST_ULP (V_NAME (erff), 0.76)
+PL_TEST_INTERVAL (V_NAME (erff), 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (V_NAME (erff), 0x1p-127, 0x1p-26, 40000)
+PL_TEST_INTERVAL (V_NAME (erff), -0x1p-127, -0x1p-26, 40000)
+PL_TEST_INTERVAL (V_NAME (erff), 0x1p-26, 0x1p3, 40000)
+PL_TEST_INTERVAL (V_NAME (erff), -0x1p-26, -0x1p3, 40000)
+PL_TEST_INTERVAL (V_NAME (erff), 0, inf, 40000)
 #endif

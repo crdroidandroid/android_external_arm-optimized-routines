@@ -1,6 +1,6 @@
 # Makefile fragment - requires GNU make
 #
-# Copyright (c) 2019-2022, Arm Limited.
+# Copyright (c) 2019-2023, Arm Limited.
 # SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
 
 PLM := $(srcdir)/pl/math
@@ -54,7 +54,23 @@ $(B)/test/mathtest.o: CFLAGS_PL += -fmath-errno
 $(math-host-objs): CC = $(HOST_CC)
 $(math-host-objs): CFLAGS_PL = $(HOST_CFLAGS)
 
-$(B)/test/ulp.o: $(AOR)/test/ulp.h
+build/pl/include/test/ulp_funcs_gen.h: $(math-lib-srcs)
+	# Replace PL_SIG
+	cat $^ | grep PL_SIG | $(CC) -xc - -o - -E "-DPL_SIG(v, t, a, f, ...)=_Z##v##t##a(f)" -P > $@
+
+build/pl/include/test/mathbench_funcs_gen.h: $(math-lib-srcs)
+	# Replace PL_SIG macros with mathbench func entries
+	cat $^ | grep PL_SIG | $(CC) -xc - -o - -E "-DPL_SIG(v, t, a, f, ...)=_Z##v##t##a(f, ##__VA_ARGS__)" -P > $@
+
+build/pl/include/test/ulp_wrappers_gen.h: $(math-lib-srcs)
+	# Replace PL_SIG macros with ULP wrapper declarations
+	cat $^ | grep PL_SIG | $(CC) -xc - -o - -E "-DPL_SIG(v, t, a, f, ...)=Z##v##N##t##a##_WRAP(f)" -P > $@
+
+$(B)/test/ulp.o: $(AOR)/test/ulp.h build/pl/include/test/ulp_funcs_gen.h build/pl/include/test/ulp_wrappers_gen.h
+$(B)/test/ulp.o: CFLAGS_PL += -I build/pl/include/test
+
+$(B)/test/mathbench.o: build/pl/include/test/mathbench_funcs_gen.h
+$(B)/test/mathbench.o: CFLAGS_PL += -I build/pl/include/test
 
 build/pl/lib/libmathlib.so: $(math-lib-objs:%.o=%.os)
 	$(CC) $(CFLAGS_PL) $(LDFLAGS) -shared -o $@ $^
@@ -118,17 +134,79 @@ build/pl/include/test/%.h: $(PLM)/test/%.h
 build/pl/bin/%.sh: $(PLM)/test/%.sh
 	cp $< $@
 
-math-tests := $(wildcard $(PLM)/test/testcases/directed/*.tst)
-math-rtests := $(wildcard $(PLM)/test/testcases/random/*.tst)
+pl-math-tests := $(wildcard $(PLM)/test/testcases/directed/*.tst)
+pl-math-rtests := $(wildcard $(PLM)/test/testcases/random/*.tst)
 
 check-pl/math-test: $(math-tools)
-	cat $(math-tests) | $(EMULATOR) build/pl/bin/mathtest $(math-testflags)
+	cat $(pl-math-tests) | $(EMULATOR) build/pl/bin/mathtest $(math-testflags)
 
 check-pl/math-rtest: $(math-host-tools) $(math-tools)
-	cat $(math-rtests) | build/pl/bin/rtest | $(EMULATOR) build/pl/bin/mathtest $(math-testflags)
+	cat $(pl-math-rtests) | build/pl/bin/rtest | $(EMULATOR) build/pl/bin/mathtest $(math-testflags)
 
-check-pl/math-ulp: $(math-tools)
-	WANT_SVE_MATH=$(WANT_SVE_MATH) ULPFLAGS="$(math-ulpflags)" build/pl/bin/runulp.sh $(EMULATOR)
+ulp-input-dir=$(B)/test/inputs
+
+math-lib-lims = $(patsubst $(PLM)/%,$(ulp-input-dir)/%.ulp,$(basename $(math-lib-srcs)))
+math-lib-aliases = $(patsubst $(PLM)/%,$(ulp-input-dir)/%.alias,$(basename $(math-lib-srcs)))
+math-lib-fenvs = $(patsubst $(PLM)/%,$(ulp-input-dir)/%.fenv,$(basename $(math-lib-srcs)))
+math-lib-itvs = $(patsubst $(PLM)/%,$(ulp-input-dir)/%.itv,$(basename $(math-lib-srcs)))
+
+ulp-inputs = $(math-lib-lims) $(math-lib-aliases) $(math-lib-fenvs) $(math-lib-itvs)
+
+$(ulp-inputs): CFLAGS_PL += -I$(PLM) -I$(PLM)/include $(math-cflags)
+
+$(ulp-input-dir)/%.ulp: $(PLM)/%.c
+	mkdir -p $(@D)
+	$(CC) -I$(PLM)/test $(CFLAGS_PL) $< -o - -E | { grep -o "PL_TEST_ULP [^ ]* [^ ]*" || true; } > $@
+
+$(ulp-input-dir)/%.alias: $(PLM)/%.c
+	mkdir -p $(@D)
+	$(CC) -I$(PLM)/test $(CFLAGS_PL) $< -o - -E | { grep "PL_TEST_ALIAS" || true; } | sed "s/_x / /g"> $@
+
+$(ulp-input-dir)/%.fenv: $(PLM)/%.c
+	mkdir -p $(@D)
+	$(CC) -I$(PLM)/test $(CFLAGS_PL) $< -o - -E | { grep -o "PL_TEST_EXPECT_FENV_ENABLED [^ ]*" || true; } > $@
+
+$(ulp-input-dir)/%.itv: $(PLM)/%.c
+	mkdir -p $(dir $@)
+	$(CC) -I$(PLM)/test $(CFLAGS_PL) $< -o - -E | { grep "PL_TEST_INTERVAL " || true; } | sed "s/ PL_TEST_INTERVAL/\nPL_TEST_INTERVAL/g" > $@
+
+ulp-lims := $(ulp-input-dir)/limits
+$(ulp-lims): $(math-lib-lims)
+	cat $^ | sed "s/PL_TEST_ULP //g;s/^ *//g" > $@
+
+ulp-aliases := $(ulp-input-dir)/aliases
+$(ulp-aliases): $(math-lib-aliases)
+	cat $^ | sed "s/PL_TEST_ALIAS //g;s/^ *//g" > $@
+
+fenv-exps := $(ulp-input-dir)/fenv
+$(fenv-exps): $(math-lib-fenvs)
+	cat $^ | sed "s/PL_TEST_EXPECT_FENV_ENABLED //g;s/^ *//g" > $@
+
+ulp-itvs-noalias := $(ulp-input-dir)/itvs_noalias
+$(ulp-itvs-noalias): $(math-lib-itvs)
+	cat $^ > $@
+
+rename-aliases := $(ulp-input-dir)/rename_alias.sed
+$(rename-aliases): $(ulp-aliases)
+	# Build sed script for replacing aliases from generated alias file
+	cat $< |  awk '{ print "s/ " $$1 " / " $$2 " /g" }' > $@
+
+ulp-itvs-alias := $(ulp-input-dir)/itvs_alias
+$(ulp-itvs-alias): $(ulp-itvs-noalias) $(rename-aliases)
+	cat $< | sed  -f $(rename-aliases) > $@
+
+ulp-itvs := $(ulp-input-dir)/intervals
+$(ulp-itvs): $(ulp-itvs-alias) $(ulp-itvs-noalias)
+	cat $^ | sort -u | sed "s/PL_TEST_INTERVAL //g" > $@
+
+check-pl/math-ulp: $(math-tools) $(ulp-lims) $(ulp-aliases) $(fenv-exps) $(ulp-itvs)
+	WANT_SVE_MATH=$(WANT_SVE_MATH) \
+	ULPFLAGS="$(math-ulpflags)" \
+	LIMITS=../../../$(ulp-lims) \
+	ALIASES=../../../$(ulp-aliases) \
+	INTERVALS=../../../$(ulp-itvs) \
+	FENV=../../../$(fenv-exps) \
+	build/pl/bin/runulp.sh $(EMULATOR)
 
 check-pl/math: check-pl/math-test check-pl/math-rtest check-pl/math-ulp
 

@@ -1,12 +1,12 @@
 /*
  * Double-precision vector e^(x+tail) function.
  *
- * Copyright (c) 2019-2022, Arm Limited.
+ * Copyright (c) 2019-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
 #include "v_math.h"
+#include "math_config.h"
 #if V_SUPPORTED
 #include "v_exp_tail.h"
 

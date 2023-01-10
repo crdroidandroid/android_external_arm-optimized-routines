@@ -1,14 +1,13 @@
 /*
  * Double-precision log10(x) function.
  *
- * Copyright (c) 2020-2022, Arm Limited.
+ * Copyright (c) 2020-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
 #include "math_config.h"
-#include <float.h>
-#include <math.h>
-#include <stdint.h>
+#include "pl_sig.h"
+#include "pl_test.h"
 
 /* Polynomial coefficients and lookup tables.  */
 #define T __log10_data.tab
@@ -143,3 +142,9 @@ log10l (long double x)
 #endif
 #endif
 // clang-format on
+
+PL_SIG (S, D, 1, log10, 0.01, 11.1)
+PL_TEST_ULP (log10, 1.11)
+PL_TEST_INTERVAL (log10, 0, 0xffff000000000000, 10000)
+PL_TEST_INTERVAL (log10, 0x1p-4, 0x1p4, 40000)
+PL_TEST_INTERVAL (log10, 0, inf, 40000)

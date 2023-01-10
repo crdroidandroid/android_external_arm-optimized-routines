@@ -1,11 +1,14 @@
 /*
  * Single-precision SVE cos(x) function.
  *
- * Copyright (c) 2019-2022, Arm Limited.
+ * Copyright (c) 2019-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
 #include "sv_math.h"
+#include "pl_sig.h"
+#include "pl_test.h"
+
 #if SV_SUPPORTED
 
 #define NegPio2_1 (sv_f32 (-0x1.921fb6p+0f))
@@ -70,6 +73,10 @@ __sv_cosf_x (sv_f32_t x, const svbool_t pg)
   return y;
 }
 
-strong_alias (__sv_cosf_x, _ZGVsMxv_cosf)
+PL_ALIAS (__sv_cosf_x, _ZGVsMxv_cosf)
 
+PL_SIG (SV, F, 1, cos, -3.1, 3.1)
+PL_TEST_ULP (__sv_cosf, 1.57)
+PL_TEST_INTERVAL (__sv_cosf, 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (__sv_cosf, 0x1p-4, 0x1p4, 500000)
 #endif

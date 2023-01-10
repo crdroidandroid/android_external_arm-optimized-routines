@@ -1,10 +1,14 @@
 /*
  * Single-precision log(1+x) function.
- * Copyright (c) 2022, Arm Limited.
+ *
+ * Copyright (c) 2022-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
+#include "hornerf.h"
 #include "math_config.h"
+#include "pl_sig.h"
+#include "pl_test.h"
 
 #define Ln2 (0x1.62e43p-1f)
 #define SignMask (0x80000000)
@@ -21,8 +25,8 @@ eval_poly (float m, uint32_t e)
 {
 #ifdef LOG1PF_2U5
 
-  /* 2.5 ulp variant. Approximate log(1+m) on [-0.25, 0.5] using Estrin
-     scheme.  */
+  /* 2.5 ulp variant. Approximate log(1+m) on [-0.25, 0.5] using
+     slightly modified Estrin scheme (no x^0 term, and x term is just x).  */
   float p_12 = fmaf (m, C (1), C (0));
   float p_34 = fmaf (m, C (3), C (2));
   float p_56 = fmaf (m, C (5), C (4));
@@ -49,15 +53,7 @@ eval_poly (float m, uint32_t e)
      x + C1 * x^2 + C2 * x^3 + C3 * x^4 + ...
      Hence approximation has the form m + m^2 * P(m)
        where P(x) = C1 + C2 * x + C3 * x^2 + ... .  */
-  float p = fmaf (C (8), m, C (7));
-  p = fmaf (p, m, C (6));
-  p = fmaf (p, m, C (5));
-  p = fmaf (p, m, C (4));
-  p = fmaf (p, m, C (3));
-  p = fmaf (p, m, C (2));
-  p = fmaf (p, m, C (1));
-  p = fmaf (p, m, C (0));
-  return fmaf (m, m * p, m);
+  return fmaf (m, m * HORNER_8 (m, C), m);
 
 #else
 #error No log1pf approximation exists with the requested precision. Options are 13 or 25.
@@ -156,3 +152,14 @@ log1pf (float x)
   /* Apply the scaling back.  */
   return fmaf (scale_back, Ln2, p);
 }
+
+PL_SIG (S, F, 1, log1p, -0.9, 10.0)
+PL_TEST_ULP (log1pf, 1.52)
+PL_TEST_INTERVAL (log1pf, -10.0, 10.0, 10000)
+PL_TEST_INTERVAL (log1pf, 0.0, 0x1p-23, 50000)
+PL_TEST_INTERVAL (log1pf, 0x1p-23, 0.001, 50000)
+PL_TEST_INTERVAL (log1pf, 0.001, 1.0, 50000)
+PL_TEST_INTERVAL (log1pf, 0.0, -0x1p-23, 50000)
+PL_TEST_INTERVAL (log1pf, -0x1p-23, -0.001, 50000)
+PL_TEST_INTERVAL (log1pf, -0.001, -1.0, 50000)
+PL_TEST_INTERVAL (log1pf, -1.0, inf, 5000)

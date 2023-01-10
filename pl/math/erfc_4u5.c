@@ -1,14 +1,14 @@
 /*
  * Double-precision erfc(x) function.
  *
- * Copyright (c) 2019-2022, Arm Limited.
+ * Copyright (c) 2019-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include <stdint.h>
-#include <math.h>
-#include <errno.h>
 #include "math_config.h"
+#include "pairwise_horner.h"
+#include "pl_sig.h"
+#include "pl_test.h"
 
 #define AbsMask (0x7fffffffffffffff)
 
@@ -19,28 +19,12 @@
 double
 __exp_dd (double x, double xtail);
 
-/* Evaluate order-12 polynomials using
-   pairwise summation and Horner scheme
-   in double precision.  */
 static inline double
 eval_poly_horner (double z, int i)
 {
-  double r1, r2, r3, r4, r5, r6, z2;
-  r1 = fma (z, PX[i][1], PX[i][0]);
-  r2 = fma (z, PX[i][3], PX[i][2]);
-  r3 = fma (z, PX[i][5], PX[i][4]);
-  r4 = fma (z, PX[i][7], PX[i][6]);
-  r5 = fma (z, PX[i][9], PX[i][8]);
-  r6 = fma (z, PX[i][11], PX[i][10]);
-  z2 = z * z;
-  double r = PX[i][12];
-  r = fma (z2, r, r6);
-  r = fma (z2, r, r5);
-  r = fma (z2, r, r4);
-  r = fma (z2, r, r3);
-  r = fma (z2, r, r2);
-  r = fma (z2, r, r1);
-  return r;
+  double z2 = z * z;
+#define C(j) PX[i][j]
+  return PAIRWISE_HORNER_12 (z, z2, C);
 }
 
 /* Accurate evaluation of exp(x^2)
@@ -117,10 +101,9 @@ top32 (double x)
 /* Fast erfc implementation.
    The approximation uses polynomial approximation of
    exp(x^2) * erfc(x) with fixed orders on 20 intervals.
-   Maximum measured error is 4.37 ULPs in [1.2281, 1.2282].
-   erfc(0x1.3a64c308e7789p+0) got 0x1.519b08721640cp-4
-			     want 0x1.519b087216408p-4
-   -0.367612 ulp err 3.86761.  */
+   Maximum measured error is 4.05 ULPs:.
+   erfc(0x1.e8ebf6a2b0801p-2) got 0x1.ff84036f8f0b3p-2
+			     want 0x1.ff84036f8f0b7p-2.  */
 double
 erfc (double x)
 {
@@ -161,3 +144,12 @@ erfc (double x)
       return __math_uflow (0);
     }
 }
+
+PL_SIG (S, D, 1, erfc, -6.0, 28.0)
+PL_TEST_ULP (erfc, 3.56)
+PL_TEST_INTERVAL (erfc, 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (erfc, 0x1p-1022, 0x1p-26, 40000)
+PL_TEST_INTERVAL (erfc, -0x1p-1022, -0x1p-26, 40000)
+PL_TEST_INTERVAL (erfc, 0x1p-26, 0x1p5, 40000)
+PL_TEST_INTERVAL (erfc, -0x1p-26, -0x1p3, 40000)
+PL_TEST_INTERVAL (erfc, 0, inf, 40000)

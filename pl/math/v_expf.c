@@ -1,12 +1,12 @@
 /*
  * Single-precision vector e^x function.
  *
- * Copyright (c) 2019, Arm Limited.
+ * Copyright (c) 2019-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "mathlib.h"
 #include "v_math.h"
+#include "mathlib.h"
 #if V_SUPPORTED
 
 static const float Poly[] = {

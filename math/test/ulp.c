@@ -223,8 +223,9 @@ static int secondcall;
 #if __aarch64__ && WANT_VMATH
 typedef __f32x4_t v_float;
 typedef __f64x2_t v_double;
-static const float fv[2] = {1.0f, -INFINITY};
-static const double dv[2] = {1.0, -INFINITY};
+/* First element of fv and dv may be changed by -c argument.  */
+static float fv[2] = {1.0f, -INFINITY};
+static double dv[2] = {1.0, -INFINITY};
 static inline v_float argf(float x) { return (v_float){x,x,x,fv[secondcall]}; }
 static inline v_double argd(double x) { return (v_double){x,dv[secondcall]}; }
 #if WANT_SVE_MATH
@@ -340,6 +341,27 @@ static const struct fun fun[] = {
 #define F2(x) F (x##f, x##f, x, mpfr_##x, 2, 1, f2, 0)
 #define D1(x) F (x, x, x##l, mpfr_##x, 1, 0, d1, 0)
 #define D2(x) F (x, x, x##l, mpfr_##x, 2, 0, d2, 0)
+/* Neon routines.  */
+#define VF1(x) F (__v_##x##f, v_##x##f, x, mpfr_##x, 1, 1, f1, 0)
+#define VF2(x) F (__v_##x##f, v_##x##f, x, mpfr_##x, 2, 1, f2, 0)
+#define VD1(x) F (__v_##x, v_##x, x##l, mpfr_##x, 1, 0, d1, 0)
+#define VD2(x) F (__v_##x, v_##x, x##l, mpfr_##x, 2, 0, d2, 0)
+#define VNF1(x) F (__vn_##x##f, vn_##x##f, x, mpfr_##x, 1, 1, f1, 0)
+#define VNF2(x) F (__vn_##x##f, vn_##x##f, x, mpfr_##x, 2, 1, f2, 0)
+#define VND1(x) F (__vn_##x, vn_##x, x##l, mpfr_##x, 1, 0, d1, 0)
+#define VND2(x) F (__vn_##x, vn_##x, x##l, mpfr_##x, 2, 0, d2, 0)
+#define ZVF1(x) F (_ZGVnN4v_##x##f, Z_##x##f, x, mpfr_##x, 1, 1, f1, 0)
+#define ZVF2(x) F (_ZGVnN4vv_##x##f, Z_##x##f, x, mpfr_##x, 2, 1, f2, 0)
+#define ZVD1(x) F (_ZGVnN2v_##x, Z_##x, x##l, mpfr_##x, 1, 0, d1, 0)
+#define ZVD2(x) F (_ZGVnN2vv_##x, Z_##x, x##l, mpfr_##x, 2, 0, d2, 0)
+#define ZVNF1(x) VNF1 (x) ZVF1 (x)
+#define ZVNF2(x) VNF2 (x) ZVF2 (x)
+#define ZVND1(x) VND1 (x) ZVD1 (x)
+#define ZVND2(x) VND2 (x) ZVD2 (x)
+#define SF1(x) F (__s_##x##f, __s_##x##f, x, mpfr_##x, 1, 1, f1, 0)
+#define SF2(x) F (__s_##x##f, __s_##x##f, x, mpfr_##x, 2, 1, f2, 0)
+#define SD1(x) F (__s_##x, __s_##x, x##l, mpfr_##x, 1, 0, d1, 0)
+#define SD2(x) F (__s_##x, __s_##x, x##l, mpfr_##x, 2, 0, d2, 0)
 /* SVE routines.  */
 #define SVF1(x) F (__sv_##x##f, sv_##x##f, x, mpfr_##x, 1, 1, f1, 0)
 #define SVF2(x) F (__sv_##x##f, sv_##x##f, x, mpfr_##x, 2, 1, f2, 0)
@@ -612,6 +634,11 @@ usage (void)
   puts ("-q: quiet.");
   puts ("-m: use mpfr even if faster method is available.");
   puts ("-f: disable fenv testing (rounding modes and exceptions).");
+#if __aarch64__ && WANT_VMATH
+  puts ("-c: neutral 'control value' to test behaviour when one lane can affect another. \n"
+	"    This should be different from tested input in other lanes, and non-special \n"
+	"    (i.e. should not trigger fenv exceptions). Default is 1.");
+#endif
   puts ("Supported func:");
   for (const struct fun *f = fun; f->name; f++)
     printf ("\t%s\n", f->name);
@@ -779,6 +806,14 @@ main (int argc, char *argv[])
 	      conf.rc = argv[0][0];
 	    }
 	  break;
+#if __aarch64__ && WANT_VMATH
+	case 'c':
+	  argc--;
+	  argv++;
+	  fv[0] = strtof(argv[0], 0);
+	  dv[0] = strtod(argv[0], 0);
+	  break;
+#endif
 	default:
 	  usage ();
 	}

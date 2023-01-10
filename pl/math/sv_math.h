@@ -1,7 +1,7 @@
 /*
  * Wrapper functions for SVE ACLE.
  *
- * Copyright (c) 2019-2022, Arm Limited.
+ * Copyright (c) 2019-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
@@ -69,6 +69,12 @@ sv_fma_n_f64_x (svbool_t pg, f64_t x, sv_f64_t y, sv_f64_t z)
   return svmla_n_f64_x (pg, z, y, x);
 }
 
+static inline sv_s64_t
+sv_as_s64_u64 (sv_u64_t x)
+{
+  return svreinterpret_s64_u64 (x);
+}
+
 static inline sv_u64_t
 sv_as_u64_f64 (sv_f64_t x)
 {
@@ -79,6 +85,12 @@ static inline sv_f64_t
 sv_as_f64_u64 (sv_u64_t x)
 {
   return svreinterpret_f64_u64 (x);
+}
+
+static inline sv_f64_t
+sv_to_f64_s64_x (svbool_t pg, sv_s64_t s)
+{
+  return svcvt_f64_x (pg, s);
 }
 
 static inline sv_f64_t
@@ -111,6 +123,27 @@ sv_call2_f64 (f64_t (*f) (f64_t, f64_t), sv_f64_t x1, sv_f64_t x2, sv_f64_t y,
       p = svpnext_b64 (cmp, p);
     }
   return y;
+}
+
+/* Load array of uint64_t into svuint64_t.  */
+static inline sv_u64_t
+sv_lookup_u64_x (svbool_t pg, const u64_t *tab, sv_u64_t idx)
+{
+  return svld1_gather_u64index_u64 (pg, tab, idx);
+}
+
+/* Load array of double into svfloat64_t.  */
+static inline sv_f64_t
+sv_lookup_f64_x (svbool_t pg, const f64_t *tab, sv_u64_t idx)
+{
+  return svld1_gather_u64index_f64 (pg, tab, idx);
+}
+
+static inline sv_u64_t
+sv_mod_n_u64_x (svbool_t pg, sv_u64_t x, u64_t y)
+{
+  sv_u64_t q = svdiv_n_u64_x (pg, x, y);
+  return svmls_n_u64_x (pg, x, q, y);
 }
 
 /* Single precision.  */
@@ -155,6 +188,24 @@ static inline sv_f32_t
 sv_as_f32_u32 (sv_u32_t x)
 {
   return svreinterpret_f32_u32 (x);
+}
+
+static inline sv_s32_t
+sv_as_s32_u32 (sv_u32_t x)
+{
+  return svreinterpret_s32_u32 (x);
+}
+
+static inline sv_f32_t
+sv_to_f32_s32_x (svbool_t pg, sv_s32_t s)
+{
+  return svcvt_f32_x (pg, s);
+}
+
+static inline sv_s32_t
+sv_to_s32_f32_x (svbool_t pg, sv_f32_t x)
+{
+  return svcvt_s32_f32_x (pg, x);
 }
 
 static inline sv_f32_t

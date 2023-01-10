@@ -1,13 +1,16 @@
 /*
  * Single-precision log10 function.
  *
- * Copyright (c) 2022, Arm Limited.
+ * Copyright (c) 2022-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
 #include <math.h>
 #include <stdint.h>
+
+#include "math_config.h"
+#include "pl_sig.h"
+#include "pl_test.h"
 
 /* Data associated to logf:
 
@@ -64,7 +67,7 @@ log10f (float x)
   tmp = ix - OFF;
   i = (tmp >> (23 - LOGF_TABLE_BITS)) % N;
   k = (int32_t) tmp >> 23; /* arithmetic shift.  */
-  iz = ix - (tmp & 0x1ff << 23);
+  iz = ix - (tmp & 0xff800000);
   invc = T[i].invc;
   logc = T[i].logc;
   z = (double_t) asfloat (iz);
@@ -84,7 +87,11 @@ log10f (float x)
 
   return eval_as_float (y);
 }
-#if USE_GLIBC_ABI
-strong_alias (log10f, __log10f_finite)
-hidden_alias (log10f, __ieee754_log10f)
-#endif
+
+PL_SIG (S, F, 1, log10, 0.01, 11.1)
+PL_TEST_ULP (log10f, 0.30)
+PL_TEST_INTERVAL (log10f, 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (log10f, 0x1p-127, 0x1p-26, 50000)
+PL_TEST_INTERVAL (log10f, 0x1p-26, 0x1p3, 50000)
+PL_TEST_INTERVAL (log10f, 0x1p-4, 0x1p4, 50000)
+PL_TEST_INTERVAL (log10f, 0, inf, 50000)
