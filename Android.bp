@@ -115,19 +115,15 @@ cc_library_static {
                 "string/aarch64/memcpy.S",
                 "string/aarch64/memrchr.S",
                 "string/aarch64/memset.S",
-                "string/aarch64/stpcpy-mte.S",
                 "string/aarch64/stpcpy.S",
                 "string/aarch64/strchrnul-mte.S",
                 "string/aarch64/strchrnul.S",
                 "string/aarch64/strchr-mte.S",
                 "string/aarch64/strchr.S",
-                "string/aarch64/strcmp-mte.S",
                 "string/aarch64/strcmp.S",
-                "string/aarch64/strcpy-mte.S",
                 "string/aarch64/strcpy.S",
                 "string/aarch64/strlen-mte.S",
                 "string/aarch64/strlen.S",
-                "string/aarch64/strncmp-mte.S",
                 "string/aarch64/strncmp.S",
                 "string/aarch64/strnlen.S",
                 "string/aarch64/strrchr-mte.S",
@@ -215,6 +211,10 @@ cc_test {
     name: "ulp",
     defaults: ["arm-optimized-routines-defaults"],
     gtest: false,
+
+    // https://github.com/ARM-software/optimized-routines/issues/53
+    local_include_dirs: ["math/"],
+
     srcs: ["math/test/ulp.c"],
     data: ["math/test/runulp.sh"],
 }
