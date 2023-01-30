@@ -1,7 +1,7 @@
 /*
  * memcpy - copy memory area
  *
- * Copyright (c) 2019-2022, Arm Limited.
+ * Copyright (c) 2019-2023, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
@@ -57,14 +57,16 @@ ENTRY (__memcpy_aarch64_sve)
 
 	cmp	count, 128
 	b.hi	L(copy_long)
-	cmp	count, 32
+	cntb	vlen
+	cmp	count, vlen, lsl 1
 	b.hi	L(copy32_128)
 
 	whilelo p0.b, xzr, count
-	cntb	vlen
-	tbnz	vlen, 4, L(vlen128)
-	ld1b	z0.b, p0/z, [src]
-	st1b	z0.b, p0, [dstin]
+	whilelo p1.b, vlen, count
+	ld1b	z0.b, p0/z, [src, 0, mul vl]
+	ld1b	z1.b, p1/z, [src, 1, mul vl]
+	st1b	z0.b, p0, [dstin, 0, mul vl]
+	st1b	z1.b, p1, [dstin, 1, mul vl]
 	ret
 
 	/* Medium copies: 33..128 bytes.  */
@@ -131,14 +133,6 @@ L(copy64_from_end):
 	stp	C_q, D_q, [dst, 48]
 	stp	E_q, F_q, [dstend, -64]
 	stp	A_q, B_q, [dstend, -32]
-	ret
-
-L(vlen128):
-	whilelo p1.b, vlen, count
-	ld1b	z0.b, p0/z, [src, 0, mul vl]
-	ld1b	z1.b, p1/z, [src, 1, mul vl]
-	st1b	z0.b, p0, [dstin, 0, mul vl]
-	st1b	z1.b, p1, [dstin, 1, mul vl]
 	ret
 
 	/* Large backwards copy for overlapping copies.
