@@ -8,7 +8,7 @@
 
 /* Emit the max ULP threshold, l, for routine f. Piggy-back PL_TEST_EXPECT_FENV
    on PL_TEST_ULP to add EXPECT_FENV to all scalar routines.  */
-#if !(V_SUPPORTED || SV_SUPPORTED)
+#if !(WANT_VMATH || WANT_SVE_MATH)
 #define PL_TEST_ULP(f, l)                                                      \
   PL_TEST_EXPECT_FENV_ALWAYS (f)                                               \
   PL_TEST_ULP f l
@@ -31,3 +31,7 @@
 
 #define PL_TEST_INTERVAL(f, lo, hi, n) PL_TEST_INTERVAL f lo hi n
 #define PL_TEST_INTERVAL_C(f, lo, hi, n, c) PL_TEST_INTERVAL f lo hi n c
+// clang-format off
+#define PL_TEST_INTERVAL2(f, xlo, xhi, ylo, yhi, n)                            \
+  PL_TEST_INTERVAL f xlo,ylo xhi,yhi n
+// clang-format on

@@ -25,37 +25,35 @@
 #define SpecialBound                                                           \
   0x4086000000000000 /* 0x1.6p9, above which exp overflows.  */
 
-#if V_SUPPORTED
-
-static inline v_f64_t
-exp_inline (v_f64_t x)
+static inline float64x2_t
+exp_inline (float64x2_t x)
 {
   /* Helper for approximating exp(x). Copied from v_exp_tail, with no
      special-case handling or tail.  */
 
   /* n = round(x/(ln2/N)).  */
-  v_f64_t z = v_fma_f64 (x, InvLn2, Shift);
-  v_u64_t u = v_as_u64_f64 (z);
-  v_f64_t n = z - Shift;
+  float64x2_t z = vfmaq_f64 (Shift, x, InvLn2);
+  uint64x2_t u = vreinterpretq_u64_f64 (z);
+  float64x2_t n = z - Shift;
 
   /* r = x - n*ln2/N.  */
-  v_f64_t r = x;
-  r = v_fma_f64 (-Ln2hi, n, r);
-  r = v_fma_f64 (-Ln2lo, n, r);
+  float64x2_t r = x;
+  r = vfmaq_f64 (r, -Ln2hi, n);
+  r = vfmaq_f64 (r, -Ln2lo, n);
 
-  v_u64_t e = u << (52 - V_EXP_TAIL_TABLE_BITS);
-  v_u64_t i = u & IndexMask;
+  uint64x2_t e = u << (52 - V_EXP_TAIL_TABLE_BITS);
+  uint64x2_t i = u & IndexMask;
 
   /* y = tail + exp(r) - 1 ~= r + C1 r^2 + C2 r^3 + C3 r^4.  */
-  v_f64_t y = v_fma_f64 (C3, r, C2);
-  y = v_fma_f64 (y, r, C1);
-  y = v_fma_f64 (y, r, v_f64 (1)) * r;
+  float64x2_t y = vfmaq_f64 (C2, C3, r);
+  y = vfmaq_f64 (C1, y, r);
+  y = vfmaq_f64 (v_f64 (1), y, r) * r;
 
   /* s = 2^(n/N).  */
   u = v_lookup_u64 (Tab, i);
-  v_f64_t s = v_as_f64_u64 (u + e);
+  float64x2_t s = vreinterpretq_f64_u64 (u + e);
 
-  return v_fma_f64 (y, s, s);
+  return vfmaq_f64 (s, y, s);
 }
 
 /* Approximation for vector double-precision cosh(x) using exp_inline.
@@ -68,29 +66,27 @@ exp_inline (v_f64_t x)
    The greatest observed error in the non-special region is 1.54 ULP:
    __v_cosh(0x1.8e205b6ecacf7p+2) got 0x1.f711dcb0c77afp+7
 				 want 0x1.f711dcb0c77b1p+7.  */
-VPCS_ATTR v_f64_t V_NAME (cosh) (v_f64_t x)
+VPCS_ATTR float64x2_t V_NAME_D1 (cosh) (float64x2_t x)
 {
-  v_u64_t ix = v_as_u64_f64 (x);
-  v_u64_t iax = ix & AbsMask;
-  v_u64_t special = v_cond_u64 (iax > SpecialBound);
+  uint64x2_t ix = vreinterpretq_u64_f64 (x);
+  uint64x2_t iax = ix & AbsMask;
+  uint64x2_t special = iax > SpecialBound;
 
   /* If any inputs are special, fall back to scalar for all lanes.  */
   if (unlikely (v_any_u64 (special)))
     return v_call_f64 (cosh, x, x, v_u64 (-1));
 
-  v_f64_t ax = v_as_f64_u64 (iax);
+  float64x2_t ax = vreinterpretq_f64_u64 (iax);
   /* Up to the point that exp overflows, we can use it to calculate cosh by
      exp(|x|) / 2 + 1 / (2 * exp(|x|)).  */
-  v_f64_t t = exp_inline (ax);
+  float64x2_t t = exp_inline (ax);
   return t * Half + Half / t;
 }
-VPCS_ALIAS
 
 PL_SIG (V, D, 1, cosh, -10.0, 10.0)
-PL_TEST_ULP (V_NAME (cosh), 1.43)
-PL_TEST_EXPECT_FENV_ALWAYS (V_NAME (cosh))
-PL_TEST_INTERVAL (V_NAME (cosh), 0, 0x1.6p9, 100000)
-PL_TEST_INTERVAL (V_NAME (cosh), -0, -0x1.6p9, 100000)
-PL_TEST_INTERVAL (V_NAME (cosh), 0x1.6p9, inf, 1000)
-PL_TEST_INTERVAL (V_NAME (cosh), -0x1.6p9, -inf, 1000)
-#endif
+PL_TEST_ULP (V_NAME_D1 (cosh), 1.43)
+PL_TEST_EXPECT_FENV_ALWAYS (V_NAME_D1 (cosh))
+PL_TEST_INTERVAL (V_NAME_D1 (cosh), 0, 0x1.6p9, 100000)
+PL_TEST_INTERVAL (V_NAME_D1 (cosh), -0, -0x1.6p9, 100000)
+PL_TEST_INTERVAL (V_NAME_D1 (cosh), 0x1.6p9, inf, 1000)
+PL_TEST_INTERVAL (V_NAME_D1 (cosh), -0x1.6p9, -inf, 1000)

@@ -9,11 +9,9 @@
 #include "math_config.h"
 #include "estrin.h"
 
-#if V_SUPPORTED
+#if WANT_VMATH
 
-#include "v_math.h"
-
-#define DBL_T v_f64_t
+#define DBL_T float64x2_t
 #define P(i) v_f64 (__atan_poly_data.poly[i])
 
 #else

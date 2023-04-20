@@ -21,8 +21,8 @@
 #define RangeVal (sv_f64 (0x1p23))
 #define AbsMask (0x7fffffffffffffff)
 
-static NOINLINE sv_f64_t
-__sv_sin_specialcase (sv_f64_t x, sv_f64_t y, svbool_t cmp)
+static NOINLINE svfloat64_t
+__sv_sin_specialcase (svfloat64_t x, svfloat64_t y, svbool_t cmp)
 {
   return sv_call_f64 (sin, x, y, cmp);
 }
@@ -30,33 +30,34 @@ __sv_sin_specialcase (sv_f64_t x, sv_f64_t y, svbool_t cmp)
 /* A fast SVE implementation of sin based on trigonometric
    instructions (FTMAD, FTSSEL, FTSMUL).
    Maximum observed error in 2.52 ULP:
-   __sv_sin(0x1.2d2b00df69661p+19) got 0x1.10ace8f3e786bp-40
+   SV_NAME_D1 (sin)(0x1.2d2b00df69661p+19) got 0x1.10ace8f3e786bp-40
 				  want 0x1.10ace8f3e7868p-40.  */
-sv_f64_t
-__sv_sin_x (sv_f64_t x, const svbool_t pg)
+svfloat64_t SV_NAME_D1 (sin) (svfloat64_t x, const svbool_t pg)
 {
-  sv_f64_t n, r, r2, y;
-  sv_u64_t sign;
+  svfloat64_t n, r, r2, y;
+  svuint64_t sign;
   svbool_t cmp;
 
-  r = sv_as_f64_u64 (svand_n_u64_x (pg, sv_as_u64_f64 (x), AbsMask));
-  sign = svand_n_u64_x (pg, sv_as_u64_f64 (x), ~AbsMask);
-  cmp = svcmpge_u64 (pg, sv_as_u64_f64 (r), sv_as_u64_f64 (RangeVal));
+  r = svreinterpret_f64_u64 (
+    svand_n_u64_x (pg, svreinterpret_u64_f64 (x), AbsMask));
+  sign = svand_n_u64_x (pg, svreinterpret_u64_f64 (x), ~AbsMask);
+  cmp = svcmpge_u64 (pg, svreinterpret_u64_f64 (r),
+		     svreinterpret_u64_f64 (RangeVal));
 
   /* n = rint(|x|/(pi/2)).  */
-  sv_f64_t q = sv_fma_f64_x (pg, InvPio2, r, Shift);
+  svfloat64_t q = svmla_f64_x (pg, Shift, r, InvPio2);
   n = svsub_f64_x (pg, q, Shift);
 
   /* r = |x| - n*(pi/2)  (range reduction into -pi/4 .. pi/4).  */
-  r = sv_fma_f64_x (pg, NegPio2_1, n, r);
-  r = sv_fma_f64_x (pg, NegPio2_2, n, r);
-  r = sv_fma_f64_x (pg, NegPio2_3, n, r);
+  r = svmla_f64_x (pg, r, n, NegPio2_1);
+  r = svmla_f64_x (pg, r, n, NegPio2_2);
+  r = svmla_f64_x (pg, r, n, NegPio2_3);
 
   /* Final multiplicative factor: 1.0 or x depending on bit #0 of q.  */
-  sv_f64_t f = svtssel_f64 (r, sv_as_u64_f64 (q));
+  svfloat64_t f = svtssel_f64 (r, svreinterpret_u64_f64 (q));
 
   /* sin(r) poly approx.  */
-  r2 = svtsmul_f64 (r, sv_as_u64_f64 (q));
+  r2 = svtsmul_f64 (r, svreinterpret_u64_f64 (q));
   y = sv_f64 (0.0);
   y = svtmad_f64 (y, r2, 7);
   y = svtmad_f64 (y, r2, 6);
@@ -71,7 +72,7 @@ __sv_sin_x (sv_f64_t x, const svbool_t pg)
   y = svmul_f64_x (pg, f, y);
 
   /* sign = y^sign.  */
-  y = sv_as_f64_u64 (sveor_u64_x (pg, sv_as_u64_f64 (y), sign));
+  y = svreinterpret_f64_u64 (sveor_u64_x (pg, svreinterpret_u64_f64 (y), sign));
 
   /* No need to pass pg to specialcase here since cmp is a strict subset,
      guaranteed by the cmpge above.  */
@@ -80,10 +81,8 @@ __sv_sin_x (sv_f64_t x, const svbool_t pg)
   return y;
 }
 
-PL_ALIAS (__sv_sin_x, _ZGVsMxv_sin)
-
 PL_SIG (SV, D, 1, sin, -3.1, 3.1)
-PL_TEST_ULP (__sv_sin, 2.03)
-PL_TEST_INTERVAL (__sv_sin, 0, 0xffff0000, 10000)
-PL_TEST_INTERVAL (__sv_sin, 0x1p-4, 0x1p4, 500000)
+PL_TEST_ULP (SV_NAME_D1 (sin), 2.03)
+PL_TEST_INTERVAL (SV_NAME_D1 (sin), 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (SV_NAME_D1 (sin), 0x1p-4, 0x1p4, 500000)
 #endif

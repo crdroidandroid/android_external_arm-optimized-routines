@@ -22,8 +22,8 @@
 #define RangeVal (sv_f64 (0x1p23))
 #define AbsMask (0x7fffffffffffffff)
 
-static NOINLINE sv_f64_t
-__sv_cos_specialcase (sv_f64_t x, sv_f64_t y, svbool_t cmp)
+static NOINLINE svfloat64_t
+__sv_cos_specialcase (svfloat64_t x, svfloat64_t y, svbool_t cmp)
 {
   return sv_call_f64 (cos, x, y, cmp);
 }
@@ -31,28 +31,29 @@ __sv_cos_specialcase (sv_f64_t x, sv_f64_t y, svbool_t cmp)
 /* A fast SVE implementation of cos based on trigonometric
    instructions (FTMAD, FTSSEL, FTSMUL).
    Maximum measured error: 2.108 ULPs.
-   __sv_cos(0x1.9b0ba158c98f3p+7) got -0x1.fddd4c65c7f07p-3
+   SV_NAME_D1 (cos)(0x1.9b0ba158c98f3p+7) got -0x1.fddd4c65c7f07p-3
 				 want -0x1.fddd4c65c7f05p-3.  */
-sv_f64_t
-__sv_cos_x (sv_f64_t x, const svbool_t pg)
+svfloat64_t SV_NAME_D1 (cos) (svfloat64_t x, const svbool_t pg)
 {
-  sv_f64_t n, r, r2, y;
+  svfloat64_t n, r, r2, y;
   svbool_t cmp;
 
-  r = sv_as_f64_u64 (svand_n_u64_x (pg, sv_as_u64_f64 (x), AbsMask));
-  cmp = svcmpge_u64 (pg, sv_as_u64_f64 (r), sv_as_u64_f64 (RangeVal));
+  r = svreinterpret_f64_u64 (
+    svand_n_u64_x (pg, svreinterpret_u64_f64 (x), AbsMask));
+  cmp = svcmpge_u64 (pg, svreinterpret_u64_f64 (r),
+		     svreinterpret_u64_f64 (RangeVal));
 
   /* n = rint(|x|/(pi/2)).  */
-  sv_f64_t q = sv_fma_f64_x (pg, InvPio2, r, Shift);
+  svfloat64_t q = svmla_f64_x (pg, Shift, r, InvPio2);
   n = svsub_f64_x (pg, q, Shift);
 
   /* r = |x| - n*(pi/2)  (range reduction into -pi/4 .. pi/4).  */
-  r = sv_fma_f64_x (pg, NegPio2_1, n, r);
-  r = sv_fma_f64_x (pg, NegPio2_2, n, r);
-  r = sv_fma_f64_x (pg, NegPio2_3, n, r);
+  r = svmla_f64_x (pg, r, n, NegPio2_1);
+  r = svmla_f64_x (pg, r, n, NegPio2_2);
+  r = svmla_f64_x (pg, r, n, NegPio2_3);
 
   /* cos(r) poly approx.  */
-  r2 = svtsmul_f64 (r, sv_as_u64_f64 (q));
+  r2 = svtsmul_f64 (r, svreinterpret_u64_f64 (q));
   y = sv_f64 (0.0);
   y = svtmad_f64 (y, r2, 7);
   y = svtmad_f64 (y, r2, 6);
@@ -64,7 +65,7 @@ __sv_cos_x (sv_f64_t x, const svbool_t pg)
   y = svtmad_f64 (y, r2, 0);
 
   /* Final multiplicative factor: 1.0 or x depending on bit #0 of q.  */
-  sv_f64_t f = svtssel_f64 (r, sv_as_u64_f64 (q));
+  svfloat64_t f = svtssel_f64 (r, svreinterpret_u64_f64 (q));
   /* Apply factor.  */
   y = svmul_f64_x (pg, f, y);
 
@@ -75,10 +76,8 @@ __sv_cos_x (sv_f64_t x, const svbool_t pg)
   return y;
 }
 
-PL_ALIAS (__sv_cos_x, _ZGVsMxv_cos)
-
 PL_SIG (SV, D, 1, cos, -3.1, 3.1)
-PL_TEST_ULP (__sv_cos, 1.61)
-PL_TEST_INTERVAL (__sv_cos, 0, 0xffff0000, 10000)
-PL_TEST_INTERVAL (__sv_cos, 0x1p-4, 0x1p4, 500000)
+PL_TEST_ULP (SV_NAME_D1 (cos), 1.61)
+PL_TEST_INTERVAL (SV_NAME_D1 (cos), 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (SV_NAME_D1 (cos), 0x1p-4, 0x1p4, 500000)
 #endif

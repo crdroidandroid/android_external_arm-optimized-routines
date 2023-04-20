@@ -21,29 +21,29 @@
 
 #define C(i) v_f32 (__expm1f_poly[i])
 
-static inline v_f32_t
-expm1f_inline (v_f32_t x)
+static inline float32x4_t
+expm1f_inline (float32x4_t x)
 {
   /* Helper routine for calculating exp(x) - 1.
      Copied from v_expm1f_1u6.c, with all special-case handling removed - the
      calling routine should handle special values if required.  */
 
   /* Reduce argument: f in [-ln2/2, ln2/2], i is exact.  */
-  v_f32_t j = v_fma_f32 (InvLn2, x, Shift) - Shift;
-  v_s32_t i = v_to_s32_f32 (j);
-  v_f32_t f = v_fma_f32 (j, MLn2hi, x);
-  f = v_fma_f32 (j, MLn2lo, f);
+  float32x4_t j = vfmaq_f32 (Shift, InvLn2, x) - Shift;
+  int32x4_t i = vcvtq_s32_f32 (j);
+  float32x4_t f = vfmaq_f32 (x, j, MLn2hi);
+  f = vfmaq_f32 (f, j, MLn2lo);
 
   /* Approximate expm1(f) with polynomial P, expm1(f) ~= f + f^2 * P(f).
      Uses Estrin scheme, where the main __v_expm1f routine uses Horner.  */
-  v_f32_t f2 = f * f;
-  v_f32_t p = ESTRIN_4 (f, f2, f2 * f2, C);
-  p = v_fma_f32 (f2, p, f);
+  float32x4_t f2 = f * f;
+  float32x4_t p = ESTRIN_4 (f, f2, f2 * f2, C);
+  p = vfmaq_f32 (f, f2, p);
 
   /* t = 2^i.  */
-  v_f32_t t = v_as_f32_u32 (v_as_u32_s32 (i << 23) + One);
+  float32x4_t t = vreinterpretq_f32_u32 (vreinterpretq_u32_s32 (i << 23) + One);
   /* expm1(x) ~= p * t + (t - 1).  */
-  return v_fma_f32 (p, t, t - 1);
+  return vfmaq_f32 (t - 1, p, t);
 }
 
 #endif // PL_MATH_V_EXPM1F_INLINE_H

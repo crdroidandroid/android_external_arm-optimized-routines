@@ -10,8 +10,6 @@
 #include "pl_sig.h"
 #include "pl_test.h"
 
-#if V_SUPPORTED
-
 /* Constants.  */
 #define NegPio2_1 (v_f32 (-0x1.921fb6p+0f))
 #define NegPio2_2 (v_f32 (0x1.777a5cp-25f))
@@ -26,25 +24,25 @@
 
 /* Special cases (fall back to scalar calls).  */
 VPCS_ATTR
-NOINLINE static v_f32_t
-specialcase (v_f32_t x, v_f32_t y, v_u32_t cmp)
+NOINLINE static float32x4_t
+specialcase (float32x4_t x, float32x4_t y, uint32x4_t cmp)
 {
   return v_call_f32 (tanf, x, y, cmp);
 }
 
 /* Use a full Estrin scheme to evaluate polynomial.  */
-static inline v_f32_t
-eval_poly (v_f32_t z)
+static inline float32x4_t
+eval_poly (float32x4_t z)
 {
-  v_f32_t z2 = z * z;
+  float32x4_t z2 = z * z;
 #if WANT_SIMD_EXCEPT
   /* Tiny z (<= 0x1p-31) will underflow when calculating z^4. If fp exceptions
      are to be triggered correctly, sidestep this by fixing such lanes to 0.  */
-  v_u32_t will_uflow = v_cond_u32 ((v_as_u32_f32 (z) & AbsMask) <= TinyBound);
+  uint32x4_t will_uflow = (vreinterpretq_u32_f32 (z) & AbsMask) <= TinyBound;
   if (unlikely (v_any_u32 (will_uflow)))
-    z2 = v_sel_f32 (will_uflow, v_f32 (0), z2);
+    z2 = vbslq_f32 (will_uflow, v_f32 (0), z2);
 #endif
-  v_f32_t z4 = z2 * z2;
+  float32x4_t z4 = z2 * z2;
   return ESTRIN_5 (z, z2, z4, poly);
 }
 
@@ -53,11 +51,11 @@ eval_poly (v_f32_t z)
    __v_tanf(-0x1.e5f0cap+13) got 0x1.ff9856p-1
 			    want 0x1.ff9850p-1.  */
 VPCS_ATTR
-v_f32_t V_NAME (tanf) (v_f32_t x)
+float32x4_t V_NAME_F1 (tan) (float32x4_t x)
 {
-  v_f32_t special_arg = x;
-  v_u32_t ix = v_as_u32_f32 (x);
-  v_u32_t iax = ix & AbsMask;
+  float32x4_t special_arg = x;
+  uint32x4_t ix = vreinterpretq_u32_f32 (x);
+  uint32x4_t iax = ix & AbsMask;
 
   /* iax >= RangeVal means x, if not inf or NaN, is too large to perform fast
      regression.  */
@@ -65,28 +63,28 @@ v_f32_t V_NAME (tanf) (v_f32_t x)
   /* If fp exceptions are to be triggered correctly, also special-case tiny
      input, as this will load to overflow later. Fix any special lanes to 1 to
      prevent any exceptions being triggered.  */
-  v_u32_t special = v_cond_u32 (iax - TinyBound >= RangeVal - TinyBound);
+  uint32x4_t special = iax - TinyBound >= RangeVal - TinyBound;
   if (unlikely (v_any_u32 (special)))
-    x = v_sel_f32 (special, v_f32 (1.0f), x);
+    x = vbslq_f32 (special, v_f32 (1.0f), x);
 #else
   /* Otherwise, special-case large and special values.  */
-  v_u32_t special = v_cond_u32 (iax >= RangeVal);
+  uint32x4_t special = iax >= RangeVal;
 #endif
 
   /* n = rint(x/(pi/2)).  */
-  v_f32_t q = v_fma_f32 (InvPio2, x, Shift);
-  v_f32_t n = q - Shift;
+  float32x4_t q = vfmaq_f32 (Shift, InvPio2, x);
+  float32x4_t n = q - Shift;
   /* n is representable as a signed integer, simply convert it.  */
-  v_s32_t in = v_round_s32 (n);
+  int32x4_t in = vcvtaq_s32_f32 (n);
   /* Determine if x lives in an interval, where |tan(x)| grows to infinity.  */
-  v_s32_t alt = in & 1;
-  v_u32_t pred_alt = (alt != 0);
+  int32x4_t alt = in & 1;
+  uint32x4_t pred_alt = (alt != 0);
 
   /* r = x - n * (pi/2)  (range reduction into -pi./4 .. pi/4).  */
-  v_f32_t r;
-  r = v_fma_f32 (NegPio2_1, n, x);
-  r = v_fma_f32 (NegPio2_2, n, r);
-  r = v_fma_f32 (NegPio2_3, n, r);
+  float32x4_t r;
+  r = vfmaq_f32 (x, NegPio2_1, n);
+  r = vfmaq_f32 (r, NegPio2_2, n);
+  r = vfmaq_f32 (r, NegPio2_3, n);
 
   /* If x lives in an interval, where |tan(x)|
      - is finite, then use a polynomial approximation of the form
@@ -96,36 +94,34 @@ v_f32_t V_NAME (tanf) (v_f32_t x)
        the same polynomial approximation of tan as above.  */
 
   /* Perform additional reduction if required.  */
-  v_f32_t z = v_sel_f32 (pred_alt, -r, r);
+  float32x4_t z = vbslq_f32 (pred_alt, -r, r);
 
   /* Evaluate polynomial approximation of tangent on [-pi/4, pi/4].  */
-  v_f32_t z2 = r * r;
-  v_f32_t p = eval_poly (z2);
-  v_f32_t y = v_fma_f32 (z * z2, p, z);
+  float32x4_t z2 = r * r;
+  float32x4_t p = eval_poly (z2);
+  float32x4_t y = vfmaq_f32 (z, z * z2, p);
 
   /* Compute reciprocal and apply if required.  */
-  v_f32_t inv_y = v_div_f32 (v_f32 (1.0f), y);
-  y = v_sel_f32 (pred_alt, inv_y, y);
+  float32x4_t inv_y = vdivq_f32 (v_f32 (1.0f), y);
+  y = vbslq_f32 (pred_alt, inv_y, y);
 
   /* Fast reduction does not handle the x = -0.0 case well,
      therefore it is fixed here.  */
-  y = v_sel_f32 (x == v_f32 (-0.0), x, y);
+  y = vbslq_f32 (x == v_f32 (-0.0), x, y);
 
   if (unlikely (v_any_u32 (special)))
     return specialcase (special_arg, y, special);
   return y;
 }
-VPCS_ALIAS
 
 PL_SIG (V, F, 1, tan, -3.1, 3.1)
-PL_TEST_ULP (V_NAME (tanf), 2.96)
-PL_TEST_EXPECT_FENV (V_NAME (tanf), WANT_SIMD_EXCEPT)
-PL_TEST_INTERVAL (V_NAME (tanf), -0.0, -0x1p126, 100)
-PL_TEST_INTERVAL (V_NAME (tanf), 0x1p-149, 0x1p-126, 4000)
-PL_TEST_INTERVAL (V_NAME (tanf), 0x1p-126, 0x1p-23, 50000)
-PL_TEST_INTERVAL (V_NAME (tanf), 0x1p-23, 0.7, 50000)
-PL_TEST_INTERVAL (V_NAME (tanf), 0.7, 1.5, 50000)
-PL_TEST_INTERVAL (V_NAME (tanf), 1.5, 100, 50000)
-PL_TEST_INTERVAL (V_NAME (tanf), 100, 0x1p17, 50000)
-PL_TEST_INTERVAL (V_NAME (tanf), 0x1p17, inf, 50000)
-#endif
+PL_TEST_ULP (V_NAME_F1 (tan), 2.96)
+PL_TEST_EXPECT_FENV (V_NAME_F1 (tan), WANT_SIMD_EXCEPT)
+PL_TEST_INTERVAL (V_NAME_F1 (tan), -0.0, -0x1p126, 100)
+PL_TEST_INTERVAL (V_NAME_F1 (tan), 0x1p-149, 0x1p-126, 4000)
+PL_TEST_INTERVAL (V_NAME_F1 (tan), 0x1p-126, 0x1p-23, 50000)
+PL_TEST_INTERVAL (V_NAME_F1 (tan), 0x1p-23, 0.7, 50000)
+PL_TEST_INTERVAL (V_NAME_F1 (tan), 0.7, 1.5, 50000)
+PL_TEST_INTERVAL (V_NAME_F1 (tan), 1.5, 100, 50000)
+PL_TEST_INTERVAL (V_NAME_F1 (tan), 100, 0x1p17, 50000)
+PL_TEST_INTERVAL (V_NAME_F1 (tan), 0x1p17, inf, 50000)

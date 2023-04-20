@@ -9,8 +9,6 @@
 #include "pairwise_hornerf.h"
 #include "pl_sig.h"
 #include "pl_test.h"
-#if V_SUPPORTED
-
 #define C(i) v_f32 (__v_log2f_data.poly[i])
 
 #define Ln2 v_f32 (0x1.62e43p-1f) /* 0x3f317218 */
@@ -20,8 +18,8 @@
 #define Off v_u32 (0x3f2aaaab) /* 0.666667 */
 
 VPCS_ATTR
-NOINLINE static v_f32_t
-specialcase (v_f32_t x, v_f32_t y, v_u32_t cmp)
+NOINLINE static float32x4_t
+specialcase (float32x4_t x, float32x4_t y, uint32x4_t cmp)
 {
   /* Fall back to scalar code.  */
   return v_call_f32 (log2f, x, y, cmp);
@@ -33,36 +31,35 @@ specialcase (v_f32_t x, v_f32_t y, v_u32_t cmp)
    __v_log2f(0x1.558174p+0) got 0x1.a9be84p-2
 			   want 0x1.a9be8p-2.  */
 VPCS_ATTR
-v_f32_t V_NAME (log2f) (v_f32_t x)
+float32x4_t V_NAME_F1 (log2) (float32x4_t x)
 {
-  v_u32_t u = v_as_u32_f32 (x);
-  v_u32_t cmp = v_cond_u32 (u - Min >= Max - Min);
+  uint32x4_t u = vreinterpretq_u32_f32 (x);
+  uint32x4_t cmp = u - Min >= Max - Min;
 
   /* x = 2^n * (1+r), where 2/3 < 1+r < 4/3.  */
   u -= Off;
-  v_f32_t n = v_to_f32_s32 (v_as_s32_u32 (u) >> 23); /* signextend.  */
+  float32x4_t n
+    = vcvtq_f32_s32 (vreinterpretq_s32_u32 (u) >> 23); /* signextend.  */
   u &= Mask;
   u += Off;
-  v_f32_t r = v_as_f32_u32 (u) - v_f32 (1.0f);
+  float32x4_t r = vreinterpretq_f32_u32 (u) - v_f32 (1.0f);
 
   /* y = log2(1+r) + n.  */
-  v_f32_t r2 = r * r;
-  v_f32_t p = PAIRWISE_HORNER_8 (r, r2, C);
-  v_f32_t y = v_fma_f32 (p, r, n);
+  float32x4_t r2 = r * r;
+  float32x4_t p = PAIRWISE_HORNER_8 (r, r2, C);
+  float32x4_t y = vfmaq_f32 (n, p, r);
 
   if (unlikely (v_any_u32 (cmp)))
     return specialcase (x, y, cmp);
   return y;
 }
-VPCS_ALIAS
 
 PL_SIG (V, F, 1, log2, 0.01, 11.1)
-PL_TEST_ULP (V_NAME (log2f), 1.99)
-PL_TEST_EXPECT_FENV_ALWAYS (V_NAME (log2f))
-PL_TEST_INTERVAL (V_NAME (log2f), -0.0, -0x1p126, 100)
-PL_TEST_INTERVAL (V_NAME (log2f), 0x1p-149, 0x1p-126, 4000)
-PL_TEST_INTERVAL (V_NAME (log2f), 0x1p-126, 0x1p-23, 50000)
-PL_TEST_INTERVAL (V_NAME (log2f), 0x1p-23, 1.0, 50000)
-PL_TEST_INTERVAL (V_NAME (log2f), 1.0, 100, 50000)
-PL_TEST_INTERVAL (V_NAME (log2f), 100, inf, 50000)
-#endif
+PL_TEST_ULP (V_NAME_F1 (log2), 1.99)
+PL_TEST_EXPECT_FENV_ALWAYS (V_NAME_F1 (log2))
+PL_TEST_INTERVAL (V_NAME_F1 (log2), -0.0, -0x1p126, 100)
+PL_TEST_INTERVAL (V_NAME_F1 (log2), 0x1p-149, 0x1p-126, 4000)
+PL_TEST_INTERVAL (V_NAME_F1 (log2), 0x1p-126, 0x1p-23, 50000)
+PL_TEST_INTERVAL (V_NAME_F1 (log2), 0x1p-23, 1.0, 50000)
+PL_TEST_INTERVAL (V_NAME_F1 (log2), 1.0, 100, 50000)
+PL_TEST_INTERVAL (V_NAME_F1 (log2), 100, inf, 50000)

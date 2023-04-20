@@ -22,8 +22,8 @@
 #define Shift (sv_f32 (0x1.800002p+23f))
 #define AbsMask (0x7fffffff)
 
-static NOINLINE sv_f32_t
-__sv_cosf_specialcase (sv_f32_t x, sv_f32_t y, svbool_t cmp)
+static NOINLINE svfloat32_t
+__sv_cosf_specialcase (svfloat32_t x, svfloat32_t y, svbool_t cmp)
 {
   return sv_call_f32 (cosf, x, y, cmp);
 }
@@ -31,31 +31,32 @@ __sv_cosf_specialcase (sv_f32_t x, sv_f32_t y, svbool_t cmp)
 /* A fast SVE implementation of cosf based on trigonometric
    instructions (FTMAD, FTSSEL, FTSMUL).
    Maximum measured error: 2.06 ULPs.
-   __sv_cosf(0x1.dea2f2p+19) got 0x1.fffe7ap-6
+   SV_NAME_F1 (cos)(0x1.dea2f2p+19) got 0x1.fffe7ap-6
 			    want 0x1.fffe76p-6.  */
-sv_f32_t
-__sv_cosf_x (sv_f32_t x, const svbool_t pg)
+svfloat32_t SV_NAME_F1 (cos) (svfloat32_t x, const svbool_t pg)
 {
-  sv_f32_t n, r, r2, y;
+  svfloat32_t n, r, r2, y;
   svbool_t cmp;
 
-  r = sv_as_f32_u32 (svand_n_u32_x (pg, sv_as_u32_f32 (x), AbsMask));
-  cmp = svcmpge_u32 (pg, sv_as_u32_f32 (r), sv_as_u32_f32 (RangeVal));
+  r = svreinterpret_f32_u32 (
+    svand_n_u32_x (pg, svreinterpret_u32_f32 (x), AbsMask));
+  cmp = svcmpge_u32 (pg, svreinterpret_u32_f32 (r),
+		     svreinterpret_u32_f32 (RangeVal));
 
   /* n = rint(|x|/(pi/2)).  */
-  sv_f32_t q = sv_fma_f32_x (pg, InvPio2, r, Shift);
+  svfloat32_t q = svmla_f32_x (pg, Shift, r, InvPio2);
   n = svsub_f32_x (pg, q, Shift);
 
   /* r = |x| - n*(pi/2)  (range reduction into -pi/4 .. pi/4).  */
-  r = sv_fma_f32_x (pg, NegPio2_1, n, r);
-  r = sv_fma_f32_x (pg, NegPio2_2, n, r);
-  r = sv_fma_f32_x (pg, NegPio2_3, n, r);
+  r = svmla_f32_x (pg, r, n, NegPio2_1);
+  r = svmla_f32_x (pg, r, n, NegPio2_2);
+  r = svmla_f32_x (pg, r, n, NegPio2_3);
 
   /* Final multiplicative factor: 1.0 or x depending on bit #0 of q.  */
-  sv_f32_t f = svtssel_f32 (r, sv_as_u32_f32 (q));
+  svfloat32_t f = svtssel_f32 (r, svreinterpret_u32_f32 (q));
 
   /* cos(r) poly approx.  */
-  r2 = svtsmul_f32 (r, sv_as_u32_f32 (q));
+  r2 = svtsmul_f32 (r, svreinterpret_u32_f32 (q));
   y = sv_f32 (0.0f);
   y = svtmad_f32 (y, r2, 4);
   y = svtmad_f32 (y, r2, 3);
@@ -73,10 +74,8 @@ __sv_cosf_x (sv_f32_t x, const svbool_t pg)
   return y;
 }
 
-PL_ALIAS (__sv_cosf_x, _ZGVsMxv_cosf)
-
 PL_SIG (SV, F, 1, cos, -3.1, 3.1)
-PL_TEST_ULP (__sv_cosf, 1.57)
-PL_TEST_INTERVAL (__sv_cosf, 0, 0xffff0000, 10000)
-PL_TEST_INTERVAL (__sv_cosf, 0x1p-4, 0x1p4, 500000)
+PL_TEST_ULP (SV_NAME_F1 (cos), 1.57)
+PL_TEST_INTERVAL (SV_NAME_F1 (cos), 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (SV_NAME_F1 (cos), 0x1p-4, 0x1p4, 500000)
 #endif

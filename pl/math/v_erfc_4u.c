@@ -11,10 +11,8 @@
 #include "pl_sig.h"
 #include "pl_test.h"
 
-#if V_SUPPORTED
-
 /* Accurate exponential (vector variant of exp_dd).  */
-v_f64_t V_NAME (exp_tail) (v_f64_t, v_f64_t);
+float64x2_t __v_exp_tail (float64x2_t, float64x2_t);
 
 #define One v_f64 (1.0)
 #define AbsMask v_u64 (0x7fffffffffffffff)
@@ -26,8 +24,8 @@ v_f64_t V_NAME (exp_tail) (v_f64_t, v_f64_t);
 
 /* Special cases (fall back to scalar calls).  */
 VPCS_ATTR
-NOINLINE static v_f64_t
-specialcase (v_f64_t x, v_f64_t y, v_u64_t cmp)
+NOINLINE static float64x2_t
+specialcase (float64x2_t x, float64x2_t y, uint64x2_t cmp)
 {
   return v_call_f64 (erfc, x, y, cmp);
 }
@@ -36,19 +34,14 @@ specialcase (v_f64_t x, v_f64_t y, v_u64_t cmp)
    tables.  */
 struct entry
 {
-  v_f64_t P[ERFC_POLY_ORDER + 1];
-  v_f64_t xi;
+  float64x2_t P[ERFC_POLY_ORDER + 1];
+  float64x2_t xi;
 };
 
 static inline struct entry
-lookup (v_u64_t i)
+lookup (uint64x2_t i)
 {
   struct entry e;
-#ifdef SCALAR
-  for (int j = 0; j <= ERFC_POLY_ORDER; ++j)
-    e.P[j] = PX[i][j];
-  e.xi = xint[i];
-#else
   for (int j = 0; j <= ERFC_POLY_ORDER; ++j)
     {
       e.P[j][0] = PX[i[0]][j];
@@ -56,32 +49,31 @@ lookup (v_u64_t i)
     }
   e.xi[0] = xint[i[0]];
   e.xi[1] = xint[i[1]];
-#endif
   return e;
 }
 
 /* Accurate evaluation of exp(x^2) using compensated product
    (x^2 ~ x*x + e2) and custom exp(y+d) routine for small
    corrections d<<y.  */
-static inline v_f64_t
-v_eval_gauss (v_f64_t a)
+static inline float64x2_t
+v_eval_gauss (float64x2_t a)
 {
-  v_f64_t e2;
-  v_f64_t a2 = a * a;
+  float64x2_t e2;
+  float64x2_t a2 = a * a;
 
   /* TwoProduct (Dekker) applied to a * a.  */
-  v_f64_t a_hi = -v_fma_f64 (Scale, a, -a);
-  a_hi = v_fma_f64 (Scale, a, a_hi);
-  v_f64_t a_lo = a - a_hi;
+  float64x2_t a_hi = -vfmaq_f64 (-a, Scale, a);
+  a_hi = vfmaq_f64 (a_hi, Scale, a);
+  float64x2_t a_lo = a - a_hi;
 
   /* Now assemble error term.  */
-  e2 = v_fma_f64 (-a_hi, a_hi, a2);
-  e2 = v_fma_f64 (-a_hi, a_lo, e2);
-  e2 = v_fma_f64 (-a_lo, a_hi, e2);
-  e2 = v_fma_f64 (-a_lo, a_lo, e2);
+  e2 = vfmaq_f64 (a2, -a_hi, a_hi);
+  e2 = vfmaq_f64 (e2, -a_hi, a_lo);
+  e2 = vfmaq_f64 (e2, -a_lo, a_hi);
+  e2 = vfmaq_f64 (e2, -a_lo, a_lo);
 
   /* Fast and accurate evaluation of exp(-a2 + e2) where e2 << a2.  */
-  return V_NAME (exp_tail) (-a2, e2);
+  return __v_exp_tail (-a2, e2);
 }
 
 /* Optimized double precision vector complementary error function erfc.
@@ -89,23 +81,23 @@ v_eval_gauss (v_f64_t a)
    __v_erfc(0x1.4792573ee6cc7p+2) got 0x1.ff3f4c8e200d5p-42
 				 want 0x1.ff3f4c8e200d9p-42.  */
 VPCS_ATTR
-v_f64_t V_NAME (erfc) (v_f64_t x)
+float64x2_t V_NAME_D1 (erfc) (float64x2_t x)
 {
-  v_f64_t z, p, y;
-  v_u64_t ix, atop, sign, i, cmp;
+  float64x2_t z, p, y;
+  uint64x2_t ix, atop, sign, i, cmp;
 
-  ix = v_as_u64_f64 (x);
+  ix = vreinterpretq_u64_f64 (x);
   /* Compute fac as early as possible in order to get best performance.  */
-  v_f64_t fac = v_as_f64_u64 ((ix >> 63) << 62);
+  float64x2_t fac = vreinterpretq_f64_u64 ((ix >> 63) << 62);
   /* Use 12-bit for small, nan and inf case detection.  */
   atop = (ix >> 52) & 0x7ff;
-  cmp = v_cond_u64 (atop - v_u64 (0x3cd) >= v_u64 (0x7ff - 0x3cd));
+  cmp = atop - v_u64 (0x3cd) >= v_u64 (0x7ff - 0x3cd);
 
   struct entry dat;
 
   /* All entries of the vector are out of bounds, take a short path.
      Use smallest possible number above 28 representable in 12 bits.  */
-  v_u64_t out_of_bounds = v_cond_u64 (atop >= v_u64 (0x404));
+  uint64x2_t out_of_bounds = atop >= v_u64 (0x404);
 
   /* Use sign to produce either 0 if x > 0, 2 otherwise.  */
   if (v_all_u64 (out_of_bounds) && likely (v_any_u64 (~cmp)))
@@ -113,24 +105,21 @@ v_f64_t V_NAME (erfc) (v_f64_t x)
 
   /* erfc(|x|) = P(|x|-x_i)*exp(-x^2).  */
 
-  v_f64_t a = v_abs_f64 (x);
+  float64x2_t a = vabsq_f64 (x);
 
   /* Interval bounds are a logarithmic scale, i.e. interval n has
      lower bound 2^(n/4) - 1. Use the exponent of (|x|+1)^4 to obtain
      the interval index.  */
-  v_f64_t xp1 = a + v_f64 (1.0);
+  float64x2_t xp1 = a + v_f64 (1.0);
   xp1 = xp1 * xp1;
   xp1 = xp1 * xp1;
-  v_u64_t ixp1 = v_as_u64_f64 (xp1);
+  uint64x2_t ixp1 = vreinterpretq_u64_f64 (xp1);
   i = (ixp1 >> 52) - v_u64 (1023);
 
   /* Index cannot exceed number of polynomials.  */
-#ifdef SCALAR
-  i = i <= (ERFC_NUM_INTERVALS) ? i : ERFC_NUM_INTERVALS;
-#else
-  i = (v_u64_t){i[0] <= ERFC_NUM_INTERVALS ? i[0] : ERFC_NUM_INTERVALS,
-		i[1] <= ERFC_NUM_INTERVALS ? i[1] : ERFC_NUM_INTERVALS};
-#endif
+  i = (uint64x2_t){i[0] <= ERFC_NUM_INTERVALS ? i[0] : ERFC_NUM_INTERVALS,
+		   i[1] <= ERFC_NUM_INTERVALS ? i[1] : ERFC_NUM_INTERVALS};
+
   /* Get coeffs of i-th polynomial.  */
   dat = lookup (i);
 
@@ -140,14 +129,14 @@ v_f64_t V_NAME (erfc) (v_f64_t x)
   p = HORNER_12 (z, C);
 
   /* Evaluate Gaussian: exp(-x^2).  */
-  v_f64_t e = v_eval_gauss (a);
+  float64x2_t e = v_eval_gauss (a);
 
   /* Copy sign.  */
-  sign = v_as_u64_f64 (x) & ~AbsMask;
-  p = v_as_f64_u64 (v_as_u64_f64 (p) ^ sign);
+  sign = vreinterpretq_u64_f64 (x) & ~AbsMask;
+  p = vreinterpretq_f64_u64 (vreinterpretq_u64_f64 (p) ^ sign);
 
   /* Assemble result as 2.0 - p * e if x < 0, p * e otherwise.  */
-  y = v_fma_f64 (p, e, fac);
+  y = vfmaq_f64 (fac, p, e);
 
   /* No need to fix value of y if x is out of bound, as
      P[ERFC_NUM_INTERVALS]=0.  */
@@ -155,14 +144,12 @@ v_f64_t V_NAME (erfc) (v_f64_t x)
     return specialcase (x, y, cmp);
   return y;
 }
-VPCS_ALIAS
 
 PL_SIG (V, D, 1, erfc, -6.0, 28.0)
-PL_TEST_ULP (V_NAME (erfc), 3.15)
-PL_TEST_INTERVAL (V_NAME (erfc), 0, 0xffff0000, 10000)
-PL_TEST_INTERVAL (V_NAME (erfc), 0x1p-1022, 0x1p-26, 40000)
-PL_TEST_INTERVAL (V_NAME (erfc), -0x1p-1022, -0x1p-26, 40000)
-PL_TEST_INTERVAL (V_NAME (erfc), 0x1p-26, 0x1p5, 40000)
-PL_TEST_INTERVAL (V_NAME (erfc), -0x1p-26, -0x1p3, 40000)
-PL_TEST_INTERVAL (V_NAME (erfc), 0, inf, 40000)
-#endif
+PL_TEST_ULP (V_NAME_D1 (erfc), 3.15)
+PL_TEST_INTERVAL (V_NAME_D1 (erfc), 0, 0xffff0000, 10000)
+PL_TEST_INTERVAL (V_NAME_D1 (erfc), 0x1p-1022, 0x1p-26, 40000)
+PL_TEST_INTERVAL (V_NAME_D1 (erfc), -0x1p-1022, -0x1p-26, 40000)
+PL_TEST_INTERVAL (V_NAME_D1 (erfc), 0x1p-26, 0x1p5, 40000)
+PL_TEST_INTERVAL (V_NAME_D1 (erfc), -0x1p-26, -0x1p3, 40000)
+PL_TEST_INTERVAL (V_NAME_D1 (erfc), 0, inf, 40000)

@@ -10,8 +10,6 @@
 #include "pl_sig.h"
 #include "pl_test.h"
 
-#if V_SUPPORTED
-
 #define AbsMask 0x7fffffff
 #define SignMask v_u32 (0x80000000)
 #define TwoThirds v_f32 (0x1.555556p-1f)
@@ -22,8 +20,8 @@
 #define C(i) v_f32 (__cbrtf_data.poly[i])
 #define T(i) v_lookup_f32 (__cbrtf_data.table, i)
 
-static NOINLINE v_f32_t
-specialcase (v_f32_t x, v_f32_t y, v_u32_t special)
+static NOINLINE float32x4_t
+specialcase (float32x4_t x, float32x4_t y, uint32x4_t special)
 {
   return v_call_f32 (cbrtf, x, y, special);
 }
@@ -34,30 +32,30 @@ specialcase (v_f32_t x, v_f32_t y, v_u32_t special)
    exponent is a multiple of 3, for example:
    __v_cbrtf(0x1.81410ep+30) got 0x1.255d96p+10
 			    want 0x1.255d92p+10.  */
-VPCS_ATTR v_f32_t V_NAME (cbrtf) (v_f32_t x)
+VPCS_ATTR float32x4_t V_NAME_F1 (cbrt) (float32x4_t x)
 {
-  v_u32_t ix = v_as_u32_f32 (x);
-  v_u32_t iax = ix & AbsMask;
+  uint32x4_t ix = vreinterpretq_u32_f32 (x);
+  uint32x4_t iax = ix & AbsMask;
 
   /* Subnormal, +/-0 and special values.  */
-  v_u32_t special = v_cond_u32 ((iax < SmallestNormal) | (iax >= 0x7f800000));
+  uint32x4_t special = (iax < SmallestNormal) | (iax >= 0x7f800000);
 
   /* Decompose |x| into m * 2^e, where m is in [0.5, 1.0]. This is a vector
      version of frexpf, which gets subnormal values wrong - these have to be
      special-cased as a result.  */
-  v_f32_t m = v_as_f32_u32 ((iax & MantissaMask) | HalfExp);
-  v_s32_t e = v_as_s32_u32 (iax >> 23) - 126;
+  float32x4_t m = vreinterpretq_f32_u32 ((iax & MantissaMask) | HalfExp);
+  int32x4_t e = vreinterpretq_s32_u32 (iax >> 23) - 126;
 
   /* p is a rough approximation for cbrt(m) in [0.5, 1.0]. The better this is,
      the less accurate the next stage of the algorithm needs to be. An order-4
      polynomial is enough for one Newton iteration.  */
-  v_f32_t p_01 = v_fma_f32 (C (1), m, C (0));
-  v_f32_t p_23 = v_fma_f32 (C (3), m, C (2));
-  v_f32_t p = v_fma_f32 (m * m, p_23, p_01);
+  float32x4_t p_01 = vfmaq_f32 (C (0), C (1), m);
+  float32x4_t p_23 = vfmaq_f32 (C (2), C (3), m);
+  float32x4_t p = vfmaq_f32 (p_01, m * m, p_23);
 
   /* One iteration of Newton's method for iteratively approximating cbrt.  */
-  v_f32_t m_by_3 = m / 3;
-  v_f32_t a = v_fma_f32 (TwoThirds, p, m_by_3 / (p * p));
+  float32x4_t m_by_3 = m / 3;
+  float32x4_t a = vfmaq_f32 (m_by_3 / (p * p), TwoThirds, p);
 
   /* Assemble the result by the following:
 
@@ -74,23 +72,23 @@ VPCS_ATTR v_f32_t V_NAME (cbrtf) (v_f32_t x)
 
      cbrt(x) = cbrt(m) * t * 2 ^ round(e / 3) * sign.  */
 
-  v_s32_t ey = e / 3;
-  v_f32_t my = a * T (v_as_u32_s32 (e % 3 + 2));
+  int32x4_t ey = e / 3;
+  float32x4_t my = a * T (vreinterpretq_u32_s32 (e % 3 + 2));
 
   /* Vector version of ldexpf.  */
-  v_f32_t y = v_as_f32_u32 ((v_as_u32_s32 (ey + 127) << 23)) * my;
+  float32x4_t y
+    = vreinterpretq_f32_u32 ((vreinterpretq_u32_s32 (ey + 127) << 23)) * my;
   /* Copy sign.  */
-  y = v_as_f32_u32 (v_bsl_u32 (SignMask, ix, v_as_u32_f32 (y)));
+  y = vreinterpretq_f32_u32 (
+    vbslq_u32 (SignMask, ix, vreinterpretq_u32_f32 (y)));
 
   if (unlikely (v_any_u32 (special)))
     return specialcase (x, y, special);
   return y;
 }
-VPCS_ALIAS
 
 PL_SIG (V, F, 1, cbrt, -10.0, 10.0)
-PL_TEST_ULP (V_NAME (cbrtf), 1.03)
-PL_TEST_EXPECT_FENV_ALWAYS (V_NAME (cbrtf))
-PL_TEST_INTERVAL (V_NAME (cbrtf), 0, inf, 1000000)
-PL_TEST_INTERVAL (V_NAME (cbrtf), -0, -inf, 1000000)
-#endif
+PL_TEST_ULP (V_NAME_F1 (cbrt), 1.03)
+PL_TEST_EXPECT_FENV_ALWAYS (V_NAME_F1 (cbrt))
+PL_TEST_INTERVAL (V_NAME_F1 (cbrt), 0, inf, 1000000)
+PL_TEST_INTERVAL (V_NAME_F1 (cbrt), -0, -inf, 1000000)
