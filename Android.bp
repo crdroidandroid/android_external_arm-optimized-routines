@@ -21,6 +21,7 @@ cc_defaults {
     cflags: [
         "-Werror",
         "-Wno-unused-parameter",
+        "-Wno-literal-range",
         "-ffp-contract=fast",
         "-fno-math-errno",
 
@@ -91,6 +92,9 @@ cc_library_static {
         arm64: {
             cflags: [
                 "-DHAVE_FAST_FMA=1",
+            ],
+            srcs: [
+                "math/aarch64/*.c",
             ],
         },
     },
