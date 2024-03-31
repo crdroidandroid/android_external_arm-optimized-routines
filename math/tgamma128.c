@@ -2,7 +2,7 @@
  * Implementation of the true gamma function (as opposed to lgamma)
  * for 128-bit long double.
  *
- * Copyright (c) 2006,2009,2023 Arm Limited.
+ * Copyright (c) 2006-2024, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
@@ -20,6 +20,9 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+/* Only binary128 format is supported.  */
+#if LDBL_MANT_DIG == 113
 
 #include "tgamma128.h"
 
@@ -349,3 +352,5 @@ long double tgamma128(long double x)
         return 1.0L / (g * x * negadjust);
     }
 }
+
+#endif
