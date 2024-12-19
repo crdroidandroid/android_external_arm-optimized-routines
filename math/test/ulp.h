@@ -1,13 +1,13 @@
 /*
  * Generic functions for ULP error estimation.
  *
- * Copyright (c) 2019, Arm Limited.
+ * Copyright (c) 2019-2024, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
 /* For each different math function type,
    T(x) should add a different suffix to x.
-   RT(x) should add a return type specific suffix to x. */
+   RT(x) should add a return type specific suffix to x.  */
 
 #ifdef NEW_RT
 #undef NEW_RT
@@ -37,7 +37,8 @@ static int RT(ulpscale_mpfr) (mpfr_t x, int t)
 /* Difference between exact result and closest real number that
    gets rounded to got, i.e. error before rounding, for a correctly
    rounded result the difference is 0.  */
-static double RT(ulperr) (RT(float) got, const struct RT(ret) * p, int r)
+static double RT (ulperr) (RT (float) got, const struct RT (ret) * p, int r,
+			   int ignore_zero_sign)
 {
   RT(float) want = p->y;
   RT(float) d;
@@ -45,10 +46,22 @@ static double RT(ulperr) (RT(float) got, const struct RT(ret) * p, int r)
 
   if (RT(asuint) (got) == RT(asuint) (want))
     return 0.0;
+  if (isnan (got) && isnan (want))
+  /* Ignore sign of NaN, and signalling-ness for MPFR.  */
+# if USE_MPFR
+    return 0;
+# else
+    return RT (issignaling) (got) == RT (issignaling) (want) ? 0 : INFINITY;
+# endif
   if (signbit (got) != signbit (want))
-    /* May have false positives with NaN.  */
-    //return isnan(got) && isnan(want) ? 0 : INFINITY;
-    return INFINITY;
+    {
+      /* Fall through to ULP calculation if ignoring sign of zero and at
+	 exactly one of want and got is non-zero.  */
+      if (ignore_zero_sign && want == got)
+	return 0.0;
+      if (!ignore_zero_sign || (want != 0 && got != 0))
+	return INFINITY;
+    }
   if (!isfinite (want) || !isfinite (got))
     {
       if (isnan (got) != isnan (want))
@@ -71,7 +84,7 @@ static double RT(ulperr) (RT(float) got, const struct RT(ret) * p, int r)
       // TODO: incorrect when got vs want cross a powof2 boundary
       /* error = got > want
 	      ? got - want - tail ulp - 0.5 ulp
-	      : got - want - tail ulp + 0.5 ulp;  */
+	      : got - want - tail ulp + 0.5 ulp.  */
       d = got - want;
       e = d > 0 ? -p->tail - 0.5 : -p->tail + 0.5;
     }
@@ -99,28 +112,34 @@ static int RT(isok_nofenv) (RT(float) ygot, RT(float) ywant)
 }
 #endif
 
-static inline void T(call_fenv) (const struct fun *f, struct T(args) a, int r,
-				  RT(float) * y, int *ex)
+static inline void T (call_fenv) (const struct fun *f, struct T (args) a,
+				  int r, RT (float) * y, int *ex,
+				  const struct conf *conf)
 {
   if (r != FE_TONEAREST)
     fesetround (r);
   feclearexcept (FE_ALL_EXCEPT);
-  *y = T(call) (f, a);
+  *y = T (call) (f, a, conf);
   *ex = fetestexcept (FE_ALL_EXCEPT);
   if (r != FE_TONEAREST)
     fesetround (FE_TONEAREST);
 }
 
-static inline void T(call_nofenv) (const struct fun *f, struct T(args) a,
-				    int r, RT(float) * y, int *ex)
+static inline void T (call_nofenv) (const struct fun *f, struct T (args) a,
+				    int r, RT (float) * y, int *ex,
+				    const struct conf *conf)
 {
-  *y = T(call) (f, a);
+  if (r != FE_TONEAREST)
+    fesetround (r);
+  *y = T (call) (f, a, conf);
   *ex = 0;
+  if (r != FE_TONEAREST)
+    fesetround (FE_TONEAREST);
 }
 
-static inline int T(call_long_fenv) (const struct fun *f, struct T(args) a,
-				      int r, struct RT(ret) * p,
-				      RT(float) ygot, int exgot)
+static inline int T (call_long_fenv) (const struct fun *f, struct T (args) a,
+				      int r, struct RT (ret) * p,
+				      RT (float) ygot, int exgot)
 {
   if (r != FE_TONEAREST)
     fesetround (r);
@@ -155,8 +174,12 @@ static inline int T(call_long_nofenv) (const struct fun *f, struct T(args) a,
 					int r, struct RT(ret) * p,
 					RT(float) ygot, int exgot)
 {
+  if (r != FE_TONEAREST)
+    fesetround (r);
   RT(double) yl = T(call_long) (f, a);
   p->y = (RT(float)) yl;
+  if (r != FE_TONEAREST)
+    fesetround (FE_TONEAREST);
   if (RT(isok_nofenv) (ygot, p->y))
     return 1;
   p->ulpexp = RT(ulpscale) (p->y);
@@ -252,6 +275,7 @@ static int T(cmp) (const struct fun *f, struct gen *gen,
   int r = conf->r;
   int use_mpfr = conf->mpfr;
   int fenv = conf->fenv;
+
   for (;;)
     {
       struct RT(ret) want;
@@ -262,15 +286,15 @@ static int T(cmp) (const struct fun *f, struct gen *gen,
       RT(float) ygot2;
       int fail = 0;
       if (fenv)
-	T(call_fenv) (f, a, r, &ygot, &exgot);
+	T (call_fenv) (f, a, r, &ygot, &exgot, conf);
       else
-	T(call_nofenv) (f, a, r, &ygot, &exgot);
+	T (call_nofenv) (f, a, r, &ygot, &exgot, conf);
       if (f->twice) {
 	secondcall = 1;
 	if (fenv)
-	  T(call_fenv) (f, a, r, &ygot2, &exgot2);
+	  T (call_fenv) (f, a, r, &ygot2, &exgot2, conf);
 	else
-	  T(call_nofenv) (f, a, r, &ygot2, &exgot2);
+	  T (call_nofenv) (f, a, r, &ygot2, &exgot2, conf);
 	secondcall = 0;
 	if (RT(asuint) (ygot) != RT(asuint) (ygot2))
 	  {
@@ -288,7 +312,7 @@ static int T(cmp) (const struct fun *f, struct gen *gen,
       if (!ok)
 	{
 	  int print = 0;
-	  double err = RT(ulperr) (ygot, &want, r);
+	  double err = RT (ulperr) (ygot, &want, r, conf->ignore_zero_sign);
 	  double abserr = fabs (err);
 	  // TODO: count errors below accuracy limit.
 	  if (abserr > 0)

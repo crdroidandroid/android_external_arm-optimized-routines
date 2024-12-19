@@ -20,7 +20,7 @@
 #define MIN_SIZE 32768
 #define MAX_SIZE (1024 * 1024)
 
-static uint8_t a[MAX_SIZE + 4096] __attribute__((__aligned__(64)));
+static uint8_t a[MAX_SIZE + 4096] __attribute__((__aligned__(4096)));
 
 #define F(x) {#x, x},
 
@@ -32,6 +32,9 @@ static const struct fun
 {
 #if __aarch64__
   F(__memset_aarch64)
+# if __ARM_FEATURE_SVE
+  F(__memset_aarch64_sve)
+# endif
 #elif __arm__
   F(__memset_arm)
 #endif
@@ -156,9 +159,9 @@ int main (void)
 	  t = clock_get_ns () - t;
 	  total_size += memset_size;
 	  tsum += t;
-	  printf ("%dK: %.2f ", size / 1024, (double)memset_size / t);
+	  printf ("%dK: %5.2f ", size / 1024, (double)memset_size / t);
 	}
-      printf( "avg %.2f\n", (double)total_size / tsum);
+      printf( "avg %5.2f\n", (double)total_size / tsum);
     }
 
   size_t total_size = 0;
@@ -180,9 +183,9 @@ int main (void)
       t = clock_get_ns () - t;
       total_size += memset_size;
       tsum += t;
-      printf ("%dK: %.2f ", size / 1024, (double)memset_size / t);
+      printf ("%dK: %5.2f ", size / 1024, (double)memset_size / t);
     }
-  printf( "avg %.2f\n", (double)total_size / tsum);
+  printf( "avg %5.2f\n", (double)total_size / tsum);
 
 
   printf ("\nMedium memset (bytes/ns):\n");
@@ -196,7 +199,7 @@ int main (void)
 	  for (int i = 0; i < ITERS2; i++)
 	    funtab[f].fun (a, 0, size);
 	  t = clock_get_ns () - t;
-	  printf ("%dB: %.2f ", size, (double)size * ITERS2 / t);
+	  printf ("%dB: %5.2f ", size, (double)size * ITERS2 / t);
 	}
       printf ("\n");
     }
@@ -208,7 +211,7 @@ int main (void)
       for (int i = 0; i < ITERS2; i++)
 	memset (a, 0, size);
       t = clock_get_ns () - t;
-      printf ("%dB: %.2f ", size, (double)size * ITERS2 / t);
+      printf ("%dB: %5.2f ", size, (double)size * ITERS2 / t);
     }
 
 
@@ -223,7 +226,7 @@ int main (void)
 	  for (int i = 0; i < ITERS3; i++)
 	    funtab[f].fun (a, 0, size);
 	  t = clock_get_ns () - t;
-	  printf ("%dK: %.2f ", size / 1024, (double)size * ITERS3 / t);
+	  printf ("%dK: %6.2f ", size / 1024, (double)size * ITERS3 / t);
 	}
       printf ("\n");
     }
@@ -235,7 +238,7 @@ int main (void)
       for (int i = 0; i < ITERS3; i++)
 	memset (a, 0, size);
       t = clock_get_ns () - t;
-      printf ("%dK: %.2f ", size / 1024, (double)size * ITERS3 / t);
+      printf ("%dK: %6.2f ", size / 1024, (double)size * ITERS3 / t);
     }
   printf ("\n\n");
 
