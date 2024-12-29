@@ -5,6 +5,19 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
+#if WANT_SVE_TESTS
+#  if __aarch64__ && __linux__
+#    ifdef __clang__
+#      pragma clang attribute push(__attribute__((target("sve"))),            \
+				   apply_to = any(function))
+#    else
+#      pragma GCC target("+sve")
+#    endif
+#  else
+#    error "SVE not supported - please disable WANT_SVE_TESTS"
+#  endif
+#endif
+
 #define _GNU_SOURCE
 #include <ctype.h>
 #include <fenv.h>
@@ -162,7 +175,7 @@ next_d2 (void *g)
 static int secondcall;
 
 /* Wrappers for vector functions.  */
-#if WANT_SIMD_TESTS
+#if __aarch64__ && __linux__
 /* First element of fv and dv may be changed by -c argument.  */
 static float fv[2] = {1.0f, -INFINITY};
 static double dv[2] = {1.0, -INFINITY};
@@ -795,7 +808,7 @@ main (int argc, char *argv[])
 	case 'z':
 	  conf.ignore_zero_sign = 1;
 	  break;
-#if WANT_SIMD_TESTS
+#if  __aarch64__ && __linux__
 	case 'c':
 	  argc--;
 	  argv++;
@@ -865,3 +878,7 @@ main (int argc, char *argv[])
 #endif
   return cmp (f, &gen, &conf);
 }
+
+#if __aarch64__ && __linux__ && WANT_SVE_TESTS && defined(__clang__)
+#  pragma clang attribute pop
+#endif

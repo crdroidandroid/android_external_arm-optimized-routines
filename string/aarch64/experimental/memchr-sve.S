@@ -5,9 +5,10 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "asmdefs.h"
+#include "../asmdefs.h"
 
-#if __ARM_FEATURE_SVE
+.arch armv8-a+sve
+
 /* Assumptions:
  *
  * ARMv8-a, AArch64
@@ -57,6 +58,3 @@ ENTRY (__memchr_aarch64_sve)
 	ret
 
 END (__memchr_aarch64_sve)
-
-#endif
-
