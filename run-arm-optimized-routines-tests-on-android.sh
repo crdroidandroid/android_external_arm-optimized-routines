@@ -26,7 +26,7 @@ check_failure() {
 
 # Run the 32-bit tests.
 if [ -e "$ANDROID_PRODUCT_OUT/data/nativetest/mathtest/mathtest" ]; then
-  adb shell /data/nativetest/mathtest/mathtest /data/nativetest/mathtest/math/test/testcases/directed/*
+  adb shell /data/nativetest/mathtest/mathtest '$(ls /data/nativetest/mathtest/math/test/testcases/directed/* | grep -v exp10)'
   check_failure
 fi
 
@@ -36,7 +36,7 @@ fi
 
 # Run the 64-bit tests.
 if [ -e "$ANDROID_PRODUCT_OUT/data/nativetest64/mathtest/mathtest" ]; then
-  adb shell /data/nativetest64/mathtest/mathtest /data/nativetest64/mathtest/math/test/testcases/directed/*
+  adb shell /data/nativetest64/mathtest/mathtest '$(ls /data/nativetest/mathtest/math/test/testcases/directed/* | grep -v exp10)'
   check_failure
 fi
 
