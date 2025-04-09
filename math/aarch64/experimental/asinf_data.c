@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 /* Approximate asinf(x) directly in [0x1p-24, 0.25]. See for tools/asinf.sollya
    for these coeffs were generated.  */

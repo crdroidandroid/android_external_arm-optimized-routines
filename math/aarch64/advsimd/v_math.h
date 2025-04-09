@@ -42,7 +42,7 @@
 #endif
 
 #include <stdint.h>
-#include "math_config.h"
+#include "../../math_config.h"
 #include <arm_neon.h>
 
 /* Shorthand helpers for declaring constants.  */

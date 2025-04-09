@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 const struct tanf_poly_data __tanf_poly_data = {
 .poly_tan = {

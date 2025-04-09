@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
-#include "poly_scalar_f64.h"
+#include "../../math_config.h"
+#include "../../poly_scalar_f64.h"
 
 /* Polynomial used in fast atan(x) and atan2(y,x) implementations
    The order 19 polynomial P approximates (atan(sqrt(x))-sqrt(x))/x^(3/2).  */

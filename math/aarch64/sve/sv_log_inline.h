@@ -6,7 +6,7 @@
  */
 
 #include "sv_math.h"
-#include "math_config.h"
+#include "../../math_config.h"
 
 #ifndef SV_LOG_INLINE_POLY_ORDER
 #  error Cannot use inline log helper without specifying poly order (options are 4 or 5)

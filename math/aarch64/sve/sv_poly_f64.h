@@ -18,7 +18,7 @@
 #define STYPE double
 #define VWRAP(f) sv_##f##_f64_x
 #define DUP svdup_f64
-#include "sv_poly_generic.h"
+#include "sv_../../poly_generic.h"
 #undef DUP
 #undef VWRAP
 #undef STYPE

@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 #include "atanf_common.h"
-#include "math_config.h"
+#include "../../math_config.h"
 #include "test_sig.h"
 #include "test_defs.h"
 

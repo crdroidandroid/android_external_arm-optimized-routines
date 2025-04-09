@@ -4,10 +4,10 @@
  * Copyright (c) 2021-2024, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
-#include "math_config.h"
+#include "../../math_config.h"
 #include "test_sig.h"
 #include "test_defs.h"
-#include "poly_scalar_f32.h"
+#include "../../poly_scalar_f32.h"
 
 /* Useful constants.  */
 #define NegPio2_1 (-0x1.921fb6p+0f)

@@ -4,8 +4,8 @@
  * Copyright (c) 2023-2024, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
-#include "poly_scalar_f32.h"
-#include "math_config.h"
+#include "../../poly_scalar_f32.h"
+#include "../../math_config.h"
 #include "test_sig.h"
 #include "test_defs.h"
 

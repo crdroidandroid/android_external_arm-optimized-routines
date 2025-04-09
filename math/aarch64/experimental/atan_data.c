@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 const struct atan_poly_data __atan_poly_data
     = { .poly = { /* Coefficients of polynomial P such that atan(x)~x+x*P(x^2)

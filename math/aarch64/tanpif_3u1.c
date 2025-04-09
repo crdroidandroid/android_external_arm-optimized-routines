@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 #include "mathlib.h"
-#include "math_config.h"
+#include "../math_config.h"
 #include "test_sig.h"
 #include "test_defs.h"
-#include "poly_scalar_f32.h"
+#include "../poly_scalar_f32.h"
 
 const static struct tanpif_data
 {

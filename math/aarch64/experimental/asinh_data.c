@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 /* asinh(x) is odd, and the first term of the Taylor expansion is x, so we can
    approximate the function by x + x^3 * P(x^2), where P(z) has the form:

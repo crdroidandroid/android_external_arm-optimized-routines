@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 /* Polynomial coefficients generated using Remez algorithm, see
    log1p.sollya for details.  */

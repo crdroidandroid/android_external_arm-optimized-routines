@@ -18,7 +18,7 @@
 #define STYPE float
 #define VWRAP(f) sv_##f##_f32_x
 #define DUP svdup_f32
-#include "sv_poly_generic.h"
+#include "sv_../../poly_generic.h"
 #undef DUP
 #undef VWRAP
 #undef STYPE

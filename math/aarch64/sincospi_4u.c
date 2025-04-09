@@ -6,10 +6,10 @@
  */
 
 #include "mathlib.h"
-#include "math_config.h"
+#include "../math_config.h"
 #include "test_sig.h"
 #include "test_defs.h"
-#include "poly_scalar_f64.h"
+#include "../poly_scalar_f64.h"
 
 /* Taylor series coefficents for sin(pi * x).
    C2 coefficient (orginally ~=5.16771278) has been split into two parts:

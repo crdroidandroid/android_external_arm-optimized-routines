@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 #include "mathlib.h"
-#include "math_config.h"
+#include "../math_config.h"
 #include "test_sig.h"
 #include "test_defs.h"
-#include "poly_scalar_f64.h"
+#include "../poly_scalar_f64.h"
 
 #define SIGN_MASK 0x8000000000000000
 

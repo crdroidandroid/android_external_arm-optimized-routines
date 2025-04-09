@@ -7,7 +7,7 @@
 #include "v_math.h"
 #include "test_defs.h"
 #include "mathlib.h"
-#include "math_config.h"
+#include "../../math_config.h"
 #include "test_sig.h"
 #include "v_poly_f64.h"
 #define V_LOG_INLINE_POLY_ORDER 4

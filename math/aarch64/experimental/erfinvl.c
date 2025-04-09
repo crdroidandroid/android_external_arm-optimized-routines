@@ -9,8 +9,8 @@
 #include <stdbool.h>
 #include <float.h>
 
-#include "math_config.h"
-#include "poly_scalar_f64.h"
+#include "../../math_config.h"
+#include "../../poly_scalar_f64.h"
 
 #define SQRT_PIl 0x1.c5bf891b4ef6aa79c3b0520d5db9p0l
 #define HF_SQRT_PIl 0x1.c5bf891b4ef6aa79c3b0520d5db9p-1l

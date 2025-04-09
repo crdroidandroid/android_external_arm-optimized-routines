@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 /* Approximate asinhf(x) directly in [2^-12, 1]. See for tools/asinhf.sollya
    for these coeffs were generated.  */

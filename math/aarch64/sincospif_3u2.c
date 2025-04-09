@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../math_config.h"
 #include "test_sig.h"
 #include "test_defs.h"
-#include "poly_scalar_f32.h"
+#include "../poly_scalar_f32.h"
 
 /* Taylor series coefficents for sin(pi * x).  */
 const static struct sincospif_data

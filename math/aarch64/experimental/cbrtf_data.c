@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 const struct cbrtf_data __cbrtf_data
   = {.poly = { /* Coefficients for very rough approximation of cbrt(x) in [0.5, 1].

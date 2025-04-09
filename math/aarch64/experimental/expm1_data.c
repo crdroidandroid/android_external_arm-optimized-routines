@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 /* Generated using fpminimax, see tools/expm1.sollya for details.  */
 const double __expm1_poly[] = { 0x1p-1,

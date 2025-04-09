@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 /* Approximate asin(x) directly in [0x1p-106, 0.25]. See tools/asin.sollya
    for these coeffcients were generated.  */

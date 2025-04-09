@@ -11,7 +11,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdint.h>
-#include "math_config.h"
+#include "../../math_config.h"
 
 #define N (1 << EXP_TABLE_BITS)
 #define InvLn2N __exp_data.invln2N

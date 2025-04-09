@@ -6,7 +6,7 @@
  */
 #include "sv_math.h"
 #include "test_defs.h"
-#include "math_config.h"
+#include "../../math_config.h"
 #include "test_sig.h"
 #include "sv_poly_f64.h"
 #define SV_LOG_INLINE_POLY_ORDER 4

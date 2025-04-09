@@ -9,8 +9,8 @@
 #ifndef PL_MATH_ATANF_COMMON_H
 #define PL_MATH_ATANF_COMMON_H
 
-#include "math_config.h"
-#include "poly_scalar_f32.h"
+#include "../../math_config.h"
+#include "../../poly_scalar_f32.h"
 
 /* Polynomial used in fast atanf(x) and atan2f(y,x) implementations
    The order 7 polynomial P approximates (atan(sqrt(x))-sqrt(x))/x^(3/2).  */

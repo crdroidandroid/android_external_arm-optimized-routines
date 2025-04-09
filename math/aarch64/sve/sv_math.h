@@ -24,7 +24,7 @@
 #include <arm_sve.h>
 #include <stdbool.h>
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 #define SV_NAME_F1(fun) _ZGVsMxv_##fun##f
 #define SV_NAME_D1(fun) _ZGVsMxv_##fun

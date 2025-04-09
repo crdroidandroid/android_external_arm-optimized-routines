@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
-#include "math_config.h"
+#include "../../math_config.h"
 
 #define N (1 << EXPF_TABLE_BITS)
 
