@@ -1,7 +1,7 @@
 /*
  * Function wrappers for ulp.
  *
- * Copyright (c) 2022-2024, Arm Limited.
+ * Copyright (c) 2022-2025, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
@@ -24,17 +24,36 @@ static int sincos_mpfr_cos(mpfr_t y, const mpfr_t x, mpfr_rnd_t r) { mpfr_sin(y,
 static int modf_mpfr_frac(mpfr_t f, const mpfr_t x, mpfr_rnd_t r) { MPFR_DECL_INIT(i, 80); return mpfr_modf(i,f,x,r); }
 static int modf_mpfr_int(mpfr_t i, const mpfr_t x, mpfr_rnd_t r) { MPFR_DECL_INIT(f, 80); return mpfr_modf(i,f,x,r); }
 # if MPFR_VERSION < MPFR_VERSION_NUM(4, 2, 0)
-static int mpfr_tanpi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
+static int mpfr_acospi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
   MPFR_DECL_INIT (frd, 1080);
-  mpfr_const_pi (frd, GMP_RNDN);
-  mpfr_mul (frd, frd, arg, GMP_RNDN);
-  return mpfr_tan (ret, frd, GMP_RNDN);
+  MPFR_DECL_INIT (pi, 1080);
+  mpfr_const_pi (pi, GMP_RNDN);
+  mpfr_acos (frd, arg, GMP_RNDN);
+  return mpfr_div (ret, frd, pi, GMP_RNDN);
 }
-static int mpfr_sinpi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
+
+static int mpfr_asinpi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
   MPFR_DECL_INIT (frd, 1080);
-  mpfr_const_pi (frd, GMP_RNDN);
-  mpfr_mul (frd, frd, arg, GMP_RNDN);
-  return mpfr_sin (ret, frd, GMP_RNDN);
+  MPFR_DECL_INIT (pi, 1080);
+  mpfr_const_pi (pi, GMP_RNDN);
+  mpfr_asin (frd, arg, GMP_RNDN);
+  return mpfr_div (ret, frd, pi, GMP_RNDN);
+}
+
+static int mpfr_atanpi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
+  MPFR_DECL_INIT (frd, 1080);
+  MPFR_DECL_INIT (pi, 1080);
+  mpfr_const_pi (pi, GMP_RNDN);
+  mpfr_atan (frd, arg, GMP_RNDN);
+  return mpfr_div (ret, frd, pi, GMP_RNDN);
+}
+
+static int mpfr_atan2pi (mpfr_t ret, const mpfr_t argx, const mpfr_t argy, mpfr_rnd_t rnd) {
+  MPFR_DECL_INIT (frd, 1080);
+  MPFR_DECL_INIT (pi, 1080);
+  mpfr_const_pi (pi, GMP_RNDN);
+  mpfr_atan2 (frd, argx, argy, GMP_RNDN);
+  return mpfr_div (ret, frd, pi, GMP_RNDN);
 }
 
 static int mpfr_cospi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
@@ -42,6 +61,20 @@ static int mpfr_cospi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
   mpfr_const_pi (frd, GMP_RNDN);
   mpfr_mul (frd, frd, arg, GMP_RNDN);
   return mpfr_cos (ret, frd, GMP_RNDN);
+}
+
+static int mpfr_sinpi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
+  MPFR_DECL_INIT (frd, 1080);
+  mpfr_const_pi (frd, GMP_RNDN);
+  mpfr_mul (frd, frd, arg, GMP_RNDN);
+  return mpfr_sin (ret, frd, GMP_RNDN);
+}
+
+static int mpfr_tanpi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
+  MPFR_DECL_INIT (frd, 1080);
+  mpfr_const_pi (frd, GMP_RNDN);
+  mpfr_mul (frd, frd, arg, GMP_RNDN);
+  return mpfr_tan (ret, frd, GMP_RNDN);
 }
 # endif
 # if WANT_EXPERIMENTAL_MATH
@@ -65,6 +98,12 @@ long double modfl_int(long double x) { long double i; modfl(x, &i); return i; }
 #if __aarch64__ && __linux__
 static float Z_expf_1u(float x) { return _ZGVnN4v_expf_1u(argf(x))[0]; }
 static float Z_exp2f_1u(float x) { return _ZGVnN4v_exp2f_1u(argf(x))[0]; }
+# if WANT_EXPERIMENTAL_MATH
+static float Z_fast_cosf(float x) { return arm_math_advsimd_fast_cosf(argf(x))[0]; }
+static float Z_fast_sinf(float x) { return arm_math_advsimd_fast_sinf(argf(x))[0]; }
+static float Z_fast_powf(float x, float y) { return arm_math_advsimd_fast_powf(argf(x), argf(y))[0]; }
+static float Z_fast_expf(float x) { return arm_math_advsimd_fast_expf(argf(x))[0]; }
+# endif
 #endif
 
 /* clang-format on */
@@ -127,6 +166,14 @@ arm_math_sincospi_cos (double x)
 #if  __aarch64__ && __linux__
 
 # if WANT_TRIGPI_TESTS
+ZVNF1_WRAP (acospi)
+ZVND1_WRAP (acospi)
+ZVNF1_WRAP (asinpi)
+ZVND1_WRAP (asinpi)
+ZVNF1_WRAP (atanpi)
+ZVND1_WRAP (atanpi)
+ZVNF2_WRAP (atan2pi)
+ZVND2_WRAP (atan2pi)
 ZVNF1_WRAP (cospi)
 ZVND1_WRAP (cospi)
 ZVNF1_WRAP (sinpi)
@@ -263,6 +310,14 @@ v_modf_int (double x)
     }
 
 # if WANT_TRIGPI_TESTS
+ZSVNF1_WRAP (acospi)
+ZSVND1_WRAP (acospi)
+ZSVNF1_WRAP (asinpi)
+ZSVND1_WRAP (asinpi)
+ZSVNF1_WRAP (atanpi)
+ZSVND1_WRAP (atanpi)
+ZSVNF2_WRAP (atan2pi)
+ZSVND2_WRAP (atan2pi)
 ZSVNF1_WRAP (cospi)
 ZSVND1_WRAP (cospi)
 ZSVNF1_WRAP (sinpi)
@@ -375,6 +430,30 @@ sv_modf_int (svbool_t pg, double x)
 }
 
 # if WANT_EXPERIMENTAL_MATH
+
+static float
+Z_sv_fast_sinf (svbool_t pg, float x)
+{
+  return svretf (arm_math_sve_fast_sinf (svargf (x), pg), pg);
+}
+
+static float
+Z_sv_fast_cosf (svbool_t pg, float x)
+{
+  return svretf (arm_math_sve_fast_cosf (svargf (x), pg), pg);
+}
+
+static float
+Z_sv_fast_powf (svbool_t pg, float x, float y)
+{
+  return svretf (arm_math_sve_fast_powf (svargf (x), svargf (y), pg), pg);
+}
+
+static float
+Z_sv_fast_expf (svbool_t pg, float x)
+{
+  return svretf (arm_math_sve_fast_expf (svargf (x), pg), pg);
+}
 
 /* Our implementations of powi/powk are too imprecise to verify
    against any established pow implementation. Instead we have the

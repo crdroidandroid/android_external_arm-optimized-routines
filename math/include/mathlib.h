@@ -1,7 +1,7 @@
 /*
  * Public API.
  *
- * Copyright (c) 2015-2024, Arm Limited.
+ * Copyright (c) 2015-2025, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
@@ -16,6 +16,7 @@ float arm_math_sinpif (float);
 double arm_math_sinpi (double);
 float arm_math_tanpif (float);
 double arm_math_tanpi (double);
+double arm_math_atan2pi (double, double);
 void arm_math_sincospif (float, float *, float *);
 void arm_math_sincospi (double, double *, double *);
 #endif
@@ -113,10 +114,13 @@ DECL_SIMD_aarch64 double tanh (double);
 /* Vector functions following the vector PCS using ABI names.  */
 __vpcs float32x4_t _ZGVnN4v_acosf (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_acoshf (float32x4_t);
+__vpcs float32x4_t _ZGVnN4v_acospif (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_asinf (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_asinhf (float32x4_t);
+__vpcs float32x4_t _ZGVnN4v_asinpif (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_atanf (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_atanhf (float32x4_t);
+__vpcs float32x4_t _ZGVnN4v_atanpif (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_cbrtf (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_cosf (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_coshf (float32x4_t);
@@ -141,6 +145,7 @@ __vpcs float32x4_t _ZGVnN4v_tanhf (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_tanpif (float32x4_t);
 __vpcs float32x4_t _ZGVnN4vl4_modff (float32x4_t, float *);
 __vpcs float32x4_t _ZGVnN4vv_atan2f (float32x4_t, float32x4_t);
+__vpcs float32x4_t _ZGVnN4vv_atan2pif (float32x4_t, float32x4_t);
 __vpcs float32x4_t _ZGVnN4vv_hypotf (float32x4_t, float32x4_t);
 __vpcs float32x4_t _ZGVnN4vv_powf (float32x4_t, float32x4_t);
 __vpcs float32x4x2_t _ZGVnN4v_cexpif (float32x4_t);
@@ -149,10 +154,13 @@ __vpcs void _ZGVnN4vl4l4_sincospif (float32x4_t, float *, float *);
 
 __vpcs float64x2_t _ZGVnN2v_acos (float64x2_t);
 __vpcs float64x2_t _ZGVnN2v_acosh (float64x2_t);
+__vpcs float64x2_t _ZGVnN2v_acospi (float64x2_t);
 __vpcs float64x2_t _ZGVnN2v_asin (float64x2_t);
 __vpcs float64x2_t _ZGVnN2v_asinh (float64x2_t);
+__vpcs float64x2_t _ZGVnN2v_asinpi (float64x2_t);
 __vpcs float64x2_t _ZGVnN2v_atan (float64x2_t);
 __vpcs float64x2_t _ZGVnN2v_atanh (float64x2_t);
+__vpcs float64x2_t _ZGVnN2v_atanpi (float64x2_t);
 __vpcs float64x2_t _ZGVnN2v_cbrt (float64x2_t);
 __vpcs float64x2_t _ZGVnN2v_cos (float64x2_t);
 __vpcs float64x2_t _ZGVnN2v_cosh (float64x2_t);
@@ -175,6 +183,7 @@ __vpcs float64x2_t _ZGVnN2v_tanh (float64x2_t);
 __vpcs float64x2_t _ZGVnN2v_tanpi (float64x2_t);
 __vpcs float64x2_t _ZGVnN2vl8_modf (float64x2_t, double *);
 __vpcs float64x2_t _ZGVnN2vv_atan2 (float64x2_t, float64x2_t);
+__vpcs float64x2_t _ZGVnN2vv_atan2pi (float64x2_t, float64x2_t);
 __vpcs float64x2_t _ZGVnN2vv_hypot (float64x2_t, float64x2_t);
 __vpcs float64x2_t _ZGVnN2vv_pow (float64x2_t, float64x2_t);
 __vpcs float64x2x2_t _ZGVnN2v_cexpi (float64x2_t);
@@ -182,6 +191,10 @@ __vpcs void _ZGVnN2vl8l8_sincos (float64x2_t, double *, double *);
 __vpcs void _ZGVnN2vl8l8_sincospi (float64x2_t, double *, double *);
 
 # if WANT_EXPERIMENTAL_MATH
+__vpcs float32x4_t arm_math_advsimd_fast_cosf (float32x4_t);
+__vpcs float32x4_t arm_math_advsimd_fast_sinf (float32x4_t);
+__vpcs float32x4_t arm_math_advsimd_fast_powf (float32x4_t, float32x4_t);
+__vpcs float32x4_t arm_math_advsimd_fast_expf (float32x4_t);
 __vpcs float32x4_t _ZGVnN4v_erfinvf (float32x4_t);
 __vpcs float64x2_t _ZGVnN2v_erfinv (float64x2_t);
 # endif
@@ -189,10 +202,13 @@ __vpcs float64x2_t _ZGVnN2v_erfinv (float64x2_t);
 #  include <arm_sve.h>
 svfloat32_t _ZGVsMxv_acosf (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_acoshf (svfloat32_t, svbool_t);
+svfloat32_t _ZGVsMxv_acospif (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_asinf (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_asinhf (svfloat32_t, svbool_t);
+svfloat32_t _ZGVsMxv_asinpif (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_atanf (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_atanhf (svfloat32_t, svbool_t);
+svfloat32_t _ZGVsMxv_atanpif (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_cbrtf (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_cosf (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_coshf (svfloat32_t, svbool_t);
@@ -215,6 +231,7 @@ svfloat32_t _ZGVsMxv_tanhf (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_tanpif (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxvl4_modff (svfloat32_t, float *, svbool_t);
 svfloat32_t _ZGVsMxvv_atan2f (svfloat32_t, svfloat32_t, svbool_t);
+svfloat32_t _ZGVsMxvv_atan2pif (svfloat32_t, svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxvv_hypotf (svfloat32_t, svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxvv_powf (svfloat32_t, svfloat32_t, svbool_t);
 svfloat32x2_t _ZGVsMxv_cexpif (svfloat32_t, svbool_t);
@@ -223,10 +240,13 @@ void _ZGVsMxvl4l4_sincospif (svfloat32_t, float *, float *, svbool_t);
 
 svfloat64_t _ZGVsMxv_acos (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxv_acosh (svfloat64_t, svbool_t);
+svfloat64_t _ZGVsMxv_acospi (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxv_asin (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxv_asinh (svfloat64_t, svbool_t);
+svfloat64_t _ZGVsMxv_asinpi (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxv_atan (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxv_atanh (svfloat64_t, svbool_t);
+svfloat64_t _ZGVsMxv_atanpi (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxv_cbrt (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxv_cos (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxv_cosh (svfloat64_t, svbool_t);
@@ -249,6 +269,7 @@ svfloat64_t _ZGVsMxv_tanh (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxv_tanpi (svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxvl8_modf (svfloat64_t, double *, svbool_t);
 svfloat64_t _ZGVsMxvv_atan2 (svfloat64_t, svfloat64_t, svbool_t);
+svfloat64_t _ZGVsMxvv_atan2pi (svfloat64_t, svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxvv_hypot (svfloat64_t, svfloat64_t, svbool_t);
 svfloat64_t _ZGVsMxvv_pow (svfloat64_t, svfloat64_t, svbool_t);
 svfloat64x2_t _ZGVsMxv_cexpi (svfloat64_t, svbool_t);
@@ -257,6 +278,10 @@ void _ZGVsMxvl8l8_sincospi (svfloat64_t, double *, double *, svbool_t);
 
 #  if WANT_EXPERIMENTAL_MATH
 
+svfloat32_t arm_math_sve_fast_cosf (svfloat32_t, svbool_t);
+svfloat32_t arm_math_sve_fast_sinf (svfloat32_t, svbool_t);
+svfloat32_t arm_math_sve_fast_powf (svfloat32_t, svfloat32_t, svbool_t);
+svfloat32_t arm_math_sve_fast_expf (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxv_erfinvf (svfloat32_t, svbool_t);
 svfloat32_t _ZGVsMxvv_powi (svfloat32_t, svint32_t, svbool_t);
 
