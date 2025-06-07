@@ -52,6 +52,11 @@ cc_defaults {
                 ],
             },
         },
+        arm: {
+	        cflags: [
+	            "-DWANT_VMATH=0",
+            ],
+        },
     },
 }
 
@@ -100,6 +105,9 @@ cc_library_static {
             cflags: [
                 "-DHAVE_FAST_FMA=1",
             ],
+            srcs: [
+                "math/aarch64/*.c",
+            ],
         },
     },
 
@@ -127,9 +135,12 @@ cc_library_static {
                 "string/aarch64/memcmp.S",
                 "string/aarch64/memcpy-advsimd.S",
                 "string/aarch64/memcpy-sve.S",
+                "string/aarch64/memcpy-mops.S",
                 "string/aarch64/memcpy.S",
+                "string/aarch64/memmove-mops.S",
                 "string/aarch64/memrchr.S",
                 "string/aarch64/memset.S",
+                "string/aarch64/memset-mops.S",
                 "string/aarch64/experimental/stpcpy-sve.S",
                 "string/aarch64/stpcpy.S",
                 "string/aarch64/strchrnul-mte.S",

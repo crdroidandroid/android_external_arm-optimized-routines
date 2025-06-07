@@ -24,6 +24,14 @@ static int sincos_mpfr_cos(mpfr_t y, const mpfr_t x, mpfr_rnd_t r) { mpfr_sin(y,
 static int modf_mpfr_frac(mpfr_t f, const mpfr_t x, mpfr_rnd_t r) { MPFR_DECL_INIT(i, 80); return mpfr_modf(i,f,x,r); }
 static int modf_mpfr_int(mpfr_t i, const mpfr_t x, mpfr_rnd_t r) { MPFR_DECL_INIT(f, 80); return mpfr_modf(i,f,x,r); }
 # if MPFR_VERSION < MPFR_VERSION_NUM(4, 2, 0)
+static int mpfr_exp2m1 (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
+  MPFR_DECL_INIT (frd, 1080);
+  MPFR_DECL_INIT (one, 1080);
+  mpfr_set_d(one, 1.0, GMP_RNDN);
+  mpfr_exp2 (frd, arg, GMP_RNDN);
+  return mpfr_sub (ret, frd, one, GMP_RNDN);
+}
+
 static int mpfr_acospi (mpfr_t ret, const mpfr_t arg, mpfr_rnd_t rnd) {
   MPFR_DECL_INIT (frd, 1080);
   MPFR_DECL_INIT (pi, 1080);
@@ -132,7 +140,7 @@ static float Z_fast_expf(float x) { return arm_math_advsimd_fast_expf(argf(x))[0
     return _ZGVnN2vv_##func (argd (x), argd (y))[0];                          \
   }
 
-#if WANT_TRIGPI_TESTS
+#if WANT_C23_TESTS
 float
 arm_math_sincospif_sin (float x)
 {
@@ -165,7 +173,7 @@ arm_math_sincospi_cos (double x)
 
 #if  __aarch64__ && __linux__
 
-# if WANT_TRIGPI_TESTS
+#if WANT_C23_TESTS
 ZVNF1_WRAP (acospi)
 ZVND1_WRAP (acospi)
 ZVNF1_WRAP (asinpi)
@@ -180,6 +188,7 @@ ZVNF1_WRAP (sinpi)
 ZVND1_WRAP (sinpi)
 ZVNF1_WRAP (tanpi)
 ZVND1_WRAP (tanpi)
+ZVNF1_WRAP (exp2m1)
 
 double
 v_sincospi_sin (double x)
@@ -209,7 +218,7 @@ v_sincospif_cos (float x)
   _ZGVnN4vl4l4_sincospif (vdupq_n_f32 (x), s, c);
   return c[0];
 }
-# endif // WANT_TRIGPI_TESTS
+#endif // WANT_C23_TESTS
 
 float
 v_sincosf_sin (float x)
@@ -309,7 +318,7 @@ v_modf_int (double x)
       return svretd (_ZGVsMxvv_##func (svargd (x), svargd (y), pg), pg);      \
     }
 
-# if WANT_TRIGPI_TESTS
+#if WANT_C23_TESTS
 ZSVNF1_WRAP (acospi)
 ZSVND1_WRAP (acospi)
 ZSVNF1_WRAP (asinpi)
@@ -320,6 +329,7 @@ ZSVNF2_WRAP (atan2pi)
 ZSVND2_WRAP (atan2pi)
 ZSVNF1_WRAP (cospi)
 ZSVND1_WRAP (cospi)
+ZSVNF1_WRAP (exp2m1)
 ZSVNF1_WRAP (sinpi)
 ZSVND1_WRAP (sinpi)
 ZSVNF1_WRAP (tanpi)
@@ -352,7 +362,7 @@ sv_sincospif_cos (svbool_t pg, float x)
   _ZGVsMxvl4l4_sincospif (svdup_f32 (x), s, c, pg);
   return svretf (svld1 (pg, c), pg);
 }
-# endif // WANT_TRIGPI_TESTS
+#endif // WANT_C23_TESTS
 
 float
 sv_sincosf_sin (svbool_t pg, float x)

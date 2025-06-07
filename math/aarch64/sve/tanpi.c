@@ -1,7 +1,7 @@
 /*
  * Double-precision vector tanpi(x) function.
  *
- * Copyright (c) 2024, Arm Limited.
+ * Copyright (c) 2024-2025, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
@@ -48,10 +48,10 @@ svfloat64_t SV_NAME_D1 (tanpi) (svfloat64_t x, const svbool_t pg)
   svfloat64_t r2 = svmul_x (pg, r, r);
   svfloat64_t r4 = svmul_x (pg, r2, r2);
 
-  svfloat64_t c_1_3 = svld1rq (pg, &d->c1);
-  svfloat64_t c_5_7 = svld1rq (pg, &d->c5);
-  svfloat64_t c_9_11 = svld1rq (pg, &d->c9);
-  svfloat64_t c_13_14 = svld1rq (pg, &d->c13);
+  svfloat64_t c_1_3 = svld1rq (svptrue_b64 (), &d->c1);
+  svfloat64_t c_5_7 = svld1rq (svptrue_b64 (), &d->c5);
+  svfloat64_t c_9_11 = svld1rq (svptrue_b64 (), &d->c9);
+  svfloat64_t c_13_14 = svld1rq (svptrue_b64 (), &d->c13);
   svfloat64_t p01 = svmla_lane (sv_f64 (d->c0), r2, c_1_3, 0);
   svfloat64_t p23 = svmla_lane (sv_f64 (d->c2), r2, c_1_3, 1);
   svfloat64_t p45 = svmla_lane (sv_f64 (d->c4), r2, c_5_7, 0);
@@ -77,7 +77,7 @@ svfloat64_t SV_NAME_D1 (tanpi) (svfloat64_t x, const svbool_t pg)
   return svreinterpret_f64 (svorr_x (pg, svreinterpret_u64 (y), sign));
 }
 
-#if WANT_TRIGPI_TESTS
+#if WANT_C23_TESTS
 TEST_DISABLE_FENV (SV_NAME_D1 (tanpi))
 TEST_ULP (SV_NAME_D1 (tanpi), 2.57)
 TEST_SYM_INTERVAL (SV_NAME_D1 (tanpi), 0, 0x1p-31, 50000)

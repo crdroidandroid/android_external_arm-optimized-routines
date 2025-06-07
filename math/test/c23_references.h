@@ -1,5 +1,5 @@
 /*
- * Extended precision scalar reference functions for trigpi.
+ * Extended precision scalar reference functions for C23.
  *
  * Copyright (c) 2023-2025, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
@@ -151,4 +151,12 @@ long double
 arm_math_atan2pil (long double x, long double y)
 {
   return atan2l (x, y) / M_PIl;
+}
+
+double
+arm_math_exp2m1 (double x)
+{
+  return (fabs (x) < 0x1p-52)
+	     ? (long double) x * 0x1.62e42fefa39ef35793c7673007e6p-1l
+	     : exp2l ((long double) x) - 1.0l;
 }

@@ -17,7 +17,7 @@ F (ypowf, -9.9, 9.9)
 {"sincosf", 'f', 0, 3.3, 33.3, {.f = sincosf_wrap}},
 {"sincosf", 'f', 0, 100, 1000, {.f = sincosf_wrap}},
 {"sincosf", 'f', 0, 1e6, 1e32, {.f = sincosf_wrap}},
-#if WANT_TRIGPI_TESTS
+#if WANT_C23_TESTS
 F (arm_math_cospif, -0.9, 0.9)
 D (arm_math_cospi, -0.9, 0.9)
 F (arm_math_sinpif, -0.9, 0.9)
@@ -65,7 +65,7 @@ VNF (arm_math_advsimd_fast_sinf, -3.1, 3.1)
 {"yarm_math_advsimd_fast_powf", 'f', 'n', -10.0, 10.0, {.vnf = y_Z_fast_powf}},
 VNF (arm_math_advsimd_fast_expf, -10.0,10.0)
 # endif
-# if WANT_TRIGPI_TESTS
+# if WANT_C23_TESTS
 VND (_ZGVnN2v_asinpi, -0.9, 0.9)
 VNF (_ZGVnN4v_asinpif, -0.9, 0.9)
 VNF (_ZGVnN4v_acospif, -0.9, 0.9)
@@ -74,6 +74,7 @@ VNF (_ZGVnN4v_atanpif, -0.9, 0.9)
 VND (_ZGVnN2v_atanpi, -0.9, 0.9)
 VNF (_ZGVnN4v_cospif, -0.9, 0.9)
 VND (_ZGVnN2v_cospi, -0.9, 0.9)
+VNF (_ZGVnN4v_exp2m1f, -10.0, 10.0)
 VNF (_ZGVnN4v_sinpif, -0.9, 0.9)
 VND (_ZGVnN2v_sinpi, -0.9, 0.9)
 VNF (_ZGVnN4v_tanpif, -0.9, 0.9)
@@ -102,7 +103,7 @@ VND (_ZGVnN2v_tanpi, -0.9, 0.9)
 {"_ZGVsMxvl8l8_sincos", 'd', 's', -3.1, 3.1, {.svd = _Z_sv_sincos_wrap}},
 {"_ZGVsMxv_cexpif", 'f', 's', -3.1, 3.1, {.svf = _Z_sv_cexpif_wrap}},
 {"_ZGVsMxv_cexpi", 'd', 's', -3.1, 3.1, {.svd = _Z_sv_cexpi_wrap}},
-# if WANT_TRIGPI_TESTS
+# if WANT_C23_TESTS
 SVF (_ZGVsMxv_acospif, -0.9, 0.9)
 SVD (_ZGVsMxv_acospi, -0.9, 0.9)
 SVF (_ZGVsMxv_asinpif, -0.9, 0.9)
@@ -111,6 +112,7 @@ SVF (_ZGVsMxv_atanpif, -0.9, 0.9)
 SVD (_ZGVsMxv_atanpi, -0.9, 0.9)
 SVF (_ZGVsMxv_cospif, -0.9, 0.9)
 SVD (_ZGVsMxv_cospi, -0.9, 0.9)
+SVF (_ZGVsMxv_exp2m1f, -10.0, 10.0)
 SVF (_ZGVsMxv_sinpif, -0.9, 0.9)
 SVD (_ZGVsMxv_sinpi, -0.9, 0.9)
 SVF (_ZGVsMxv_tanpif, -0.9, 0.9)
