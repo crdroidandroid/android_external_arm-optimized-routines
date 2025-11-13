@@ -43,6 +43,7 @@ powi_wrap (double x)
 
 #if __aarch64__ && __linux__
 
+#if WANT_C23_TESTS
 __vpcs static float32x4_t
 _Z_sincospif_wrap (float32x4_t x)
 {
@@ -58,6 +59,21 @@ _Z_sincospi_wrap (float64x2_t x)
   _ZGVnN2vl8l8_sincospi (x, s, c);
   return vld1q_f64 (s) + vld1q_f64 (c);
 }
+
+__vpcs static float32x4_t
+_Z_cexpipif_wrap (float32x4_t x)
+{
+  float32x4x2_t sc = _ZGVnN4v_cexpipif (x);
+  return sc.val[0] + sc.val[1];
+}
+
+__vpcs static float64x2_t
+_Z_cexpipi_wrap (float64x2_t x)
+{
+  float64x2x2_t sc = _ZGVnN2v_cexpipi (x);
+  return sc.val[0] + sc.val[1];
+}
+#endif
 
 __vpcs static float64x2_t
 _Z_atan2_wrap (float64x2_t x)
@@ -132,6 +148,24 @@ y_Z_pow (float64x2_t x)
 }
 
 __vpcs static float32x4_t
+xy_Z_powrf (float32x4_t x)
+{
+  return _ZGVnN4vv_powrf (x, x);
+}
+
+__vpcs static float32x4_t
+x_Z_powrf (float32x4_t x)
+{
+  return _ZGVnN4vv_powrf (x, vdupq_n_f32 (23.4));
+}
+
+__vpcs static float32x4_t
+y_Z_powrf (float32x4_t x)
+{
+  return _ZGVnN4vv_powrf (vdupq_n_f32 (2.34), x);
+}
+
+__vpcs static float32x4_t
 _Z_modff_wrap (float32x4_t x)
 {
   float y[4];
@@ -145,6 +179,20 @@ _Z_modf_wrap (float64x2_t x)
   double y[2];
   float64x2_t ret = _ZGVnN2vl8_modf (x, y);
   return ret + vld1q_f64 (y);
+}
+
+__vpcs static float32x4_t
+_Z_modff_stret_wrap (float32x4_t x)
+{
+  float32x4x2_t fi = _ZGVnN4v_modff_stret (x);
+  return fi.val[0] + fi.val[1];
+}
+
+__vpcs static float64x2_t
+_Z_modf_stret_wrap (float64x2_t x)
+{
+  float64x2x2_t fi = _ZGVnN2v_modf_stret (x);
+  return fi.val[0] + fi.val[1];
 }
 
 __vpcs static float32x4_t
@@ -275,6 +323,7 @@ y_Z_sv_pow (svfloat64_t x, svbool_t pg)
   return _ZGVsMxvv_pow (svdup_f64 (2.34), x, pg);
 }
 
+#if WANT_C23_TESTS
 static svfloat32_t
 _Z_sv_sincospif_wrap (svfloat32_t x, svbool_t pg)
 {
@@ -292,6 +341,21 @@ _Z_sv_sincospi_wrap (svfloat64_t x, svbool_t pg)
 }
 
 static svfloat32_t
+_Z_sv_cexpipif_wrap (svfloat32_t x, svbool_t pg)
+{
+  svfloat32x2_t sc = _ZGVsMxv_cexpipif (x, pg);
+  return svadd_x (pg, svget2 (sc, 0), svget2 (sc, 1));
+}
+
+static svfloat64_t
+_Z_sv_cexpipi_wrap (svfloat64_t x, svbool_t pg)
+{
+  svfloat64x2_t sc = _ZGVsMxv_cexpipi (x, pg);
+  return svadd_x (pg, svget2 (sc, 0), svget2 (sc, 1));
+}
+#endif
+
+static svfloat32_t
 _Z_sv_modff_wrap (svfloat32_t x, svbool_t pg)
 {
   float i[svcntw ()];
@@ -305,6 +369,20 @@ _Z_sv_modf_wrap (svfloat64_t x, svbool_t pg)
   double i[svcntd ()];
   svfloat64_t r = _ZGVsMxvl8_modf (x, i, pg);
   return svadd_x (pg, r, svld1 (pg, i));
+}
+
+static svfloat32_t
+_Z_sv_modff_stret_wrap (svfloat32_t x, svbool_t pg)
+{
+  svfloat32x2_t fi = _ZGVsMxv_modff_stret (x, pg);
+  return svadd_x (pg, svget2 (fi, 0), svget2 (fi, 1));
+}
+
+static svfloat64_t
+_Z_sv_modf_stret_wrap (svfloat64_t x, svbool_t pg)
+{
+  svfloat64x2_t fi = _ZGVsMxv_modf_stret (x, pg);
+  return svadd_x (pg, svget2 (fi, 0), svget2 (fi, 1));
 }
 
 static svfloat32_t
@@ -373,7 +451,7 @@ _Z_sv_powk_wrap (svfloat64_t x, svbool_t pg)
 
 #endif
 
-#if __aarch64__
+#if __aarch64__ && WANT_C23_TESTS
 static float
 sincospif_wrap (float x)
 {

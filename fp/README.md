@@ -36,6 +36,14 @@ usable with either the GNU toolchain or the LLVM toolchain. Avoid
 using assembler idioms that are not supported by both, such as the
 pseudo-instruction `adrl`.
 
+In the `at32` subdirectory, most of the code is legal in both Arm and
+Thumb state, but in a few places `#if __thumb__` is used choose
+between the Arm or Thumb instructions for an operation. To build with
+some toolchains you may have to ensure by hand that the definition of
+`__thumb__` matches the mode the assembler is in, e.g. by using both
+`-mthumb` and `-Wa,-mthumb` to pass the same option to the
+preprocessor and the assembler.
+
 2. **Helper functions**:
 Some helper functions which are not performance-critical are written
 in C. This allows them to be written only once and recompiled for the
@@ -81,6 +89,21 @@ In particular, the default semantics are:
  - In the absence of signalling NaNs, an input quiet NaN is propagated
    unchanged to the output. Again, the first input takes priority if
    both inputs are quiet NaNs.
+
+ - When converting a floating-point number to an integer, out-of-range
+   inputs return the maximum or minimum integer in the output type as
+   appropriate (taking account of signedness of the integer type). NaN
+   inputs return 0.
+
+ - When converting a NaN between single and double precision, the
+   NaN's sign bit is preserved, and so are the bits of the NaN
+   mantissa from the topmost bit downward. Converting to a narrower
+   format, low-order mantissa bits of an input NaN are discarded;
+   converting to a wider format, the output low-order bits are all 0.
+
+The first two of these rules are standard in IEEE 754. The remaining
+four rules are left unspecified by IEEE 754, and these are Arm's
+particular implementation choices.
 
 ---
 

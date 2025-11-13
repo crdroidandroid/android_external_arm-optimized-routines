@@ -1,5 +1,7 @@
 # 🚀 Arm Optimized Routines
 
+![master branch](https://github.com/ARM-software/optimized-routines/actions/workflows/tests.yml/badge.svg?event=push&branch=master)
+
 **High-performance, architecture-aware implementations of common library
 functions for Arm processors.**
 
@@ -50,14 +52,21 @@ To build and test the routines in all sub-projects:
    make check
    ```
 
+4. **Install**: By default install headers and library at `prefix=/usr/`
+
+   ```bash
+   make prefix=/path/to/install install
+   ```
+
 **Building and Testing a single subproject**:
 
 In order to build a single subproject `<sub>` use the following commands
 
-```bash
-make all-<sub>
-make check-<sub>
-```
+   ```bash
+   make all-<sub>
+   make check-<sub>
+   make prefix=/path/to/install install-<sub>
+   ```
 
 Alternatively, the `config.mk` file can be updated to specify a list of
 sub-projects.
@@ -109,6 +118,9 @@ submitting your contributions.
 
 Regular biannual releases are tagged as `vYY.MM`. All release are available at
 [https://github.com/ARM-software/optimized-routines/releases]().
+
+The latest release is
+[https://github.com/ARM-software/optimized-routines/releases/tag/v25.07](v25.07).
 
 ---
 

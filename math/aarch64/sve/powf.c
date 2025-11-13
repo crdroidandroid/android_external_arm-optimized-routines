@@ -105,11 +105,10 @@ zeroinfnan (uint32_t ix)
    preamble of scalar powf except that we do not update ix and sign_bias. This
    is done in the preamble of the SVE powf.  */
 static inline float
-powf_specialcase (float x, float y, float z)
+powf_specialcase (float x, float y)
 {
   uint32_t ix = asuint (x);
   uint32_t iy = asuint (y);
-  /* Either (x < 0x1p-126 or inf or nan) or (y is 0 or inf or nan).  */
   if (unlikely (zeroinfnan (iy)))
     {
       if (2 * iy == 0)
@@ -126,37 +125,20 @@ powf_specialcase (float x, float y, float z)
     }
   if (unlikely (zeroinfnan (ix)))
     {
-      float_t x2 = x * x;
+      float x2 = x * x;
       if (ix & 0x80000000 && checkint (iy) == 1)
 	x2 = -x2;
       return iy & 0x80000000 ? 1 / x2 : x2;
     }
-  /* We need a return here in case x<0 and y is integer, but all other tests
-   need to be run.  */
-  return z;
+  /* Return x for convenience, but make sure result is never used.  */
+  return x;
 }
 
 /* Scalar fallback for special case routines with custom signature.  */
 static svfloat32_t NOINLINE
-sv_call_powf_sc (svfloat32_t x1, svfloat32_t x2, svfloat32_t y)
+sv_call_powf_sc (svfloat32_t x1, svfloat32_t x2, svfloat32_t y, svbool_t cmp)
 {
-  /* Special cases of x or y: zero, inf and nan.  */
-  svbool_t xspecial = sv_zeroinfnan (svptrue_b32 (), svreinterpret_u32 (x1));
-  svbool_t yspecial = sv_zeroinfnan (svptrue_b32 (), svreinterpret_u32 (x2));
-  svbool_t cmp = svorr_z (svptrue_b32 (), xspecial, yspecial);
-
-  svbool_t p = svpfirst (cmp, svpfalse ());
-  while (svptest_any (cmp, p))
-    {
-      float sx1 = svclastb (p, 0, x1);
-      float sx2 = svclastb (p, 0, x2);
-      float elem = svclastb (p, 0, y);
-      elem = powf_specialcase (sx1, sx2, elem);
-      svfloat32_t y2 = sv_f32 (elem);
-      y = svsel (p, y2, y);
-      p = svpnext_b32 (cmp, p);
-    }
-  return y;
+  return sv_call2_f32 (powf_specialcase, x1, x2, y, cmp);
 }
 
 /* Compute core for half of the lanes in double precision.  */
@@ -215,12 +197,12 @@ sv_powf_core (const svbool_t pg, svuint32_t i, svuint32_t iz, svint32_t k,
      in order to perform core computation in double precision.  */
   const svbool_t pg_lo = svunpklo (pg);
   const svbool_t pg_hi = svunpkhi (pg);
-  svfloat64_t y_lo
-      = svcvt_f64_x (pg, svreinterpret_f32 (svunpklo (svreinterpret_u32 (y))));
-  svfloat64_t y_hi
-      = svcvt_f64_x (pg, svreinterpret_f32 (svunpkhi (svreinterpret_u32 (y))));
-  svfloat64_t z_lo = svcvt_f64_x (pg, svreinterpret_f32 (svunpklo (iz)));
-  svfloat64_t z_hi = svcvt_f64_x (pg, svreinterpret_f32 (svunpkhi (iz)));
+  svfloat64_t y_lo = svcvt_f64_x (
+      ptrue, svreinterpret_f32 (svunpklo (svreinterpret_u32 (y))));
+  svfloat64_t y_hi = svcvt_f64_x (
+      ptrue, svreinterpret_f32 (svunpkhi (svreinterpret_u32 (y))));
+  svfloat64_t z_lo = svcvt_f64_x (ptrue, svreinterpret_f32 (svunpklo (iz)));
+  svfloat64_t z_hi = svcvt_f64_x (ptrue, svreinterpret_f32 (svunpkhi (iz)));
   svuint64_t i_lo = svunpklo (i);
   svuint64_t i_hi = svunpkhi (i);
   svint64_t k_lo = svunpklo (k);
@@ -301,7 +283,7 @@ svfloat32_t SV_NAME_F2 (pow) (svfloat32_t x, svfloat32_t y, const svbool_t pg)
 			 (23 - V_POWF_EXP2_TABLE_BITS));
 
   /* Compute core in extended precision and return intermediate ylogx results
-     to handle cases of underflow and underflow in exp.  */
+     to handle cases of underflow and overflow in exp.  */
   svfloat32_t ylogx;
   svfloat32_t ret
       = sv_powf_core (yint_or_xpos, i, iz, k, y, sign_bias, &ylogx, d);
@@ -319,14 +301,13 @@ svfloat32_t SV_NAME_F2 (pow) (svfloat32_t x, svfloat32_t y, const svbool_t pg)
   ret = svsel (yint_or_xpos, ret, sv_f32 (__builtin_nanf ("")));
 
   if (unlikely (svptest_any (cmp, cmp)))
-    return sv_call_powf_sc (x, y, ret);
+    return sv_call_powf_sc (x, y, ret, cmp);
 
   return ret;
 }
 
 TEST_SIG (SV, F, 2, pow)
 TEST_ULP (SV_NAME_F2 (pow), 2.08)
-TEST_DISABLE_FENV (SV_NAME_F2 (pow))
 /* Wide intervals spanning the whole domain but shared between x and y.  */
 #define SV_POWF_INTERVAL2(xlo, xhi, ylo, yhi, n)                              \
   TEST_INTERVAL2 (SV_NAME_F2 (pow), xlo, xhi, ylo, yhi, n)                    \

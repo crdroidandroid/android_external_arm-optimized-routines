@@ -10,6 +10,21 @@
 #ifndef M_PIl
 #  define M_PIl 3.141592653589793238462643383279502884l
 #endif
+#ifndef M_INV_LOG2l
+#  define M_INV_LOG2l 0x1.71547652b82fe1777d0ffda0d23a7d11d6aef551cp+0
+#endif
+#ifndef M_INV_LOG10
+#  define M_INV_LOG10 0x1.bcb7b1526e50ep-2
+#endif
+#ifndef M_INV_LOG10l
+#  define M_INV_LOG10l 0x1.bcb7b1526e50e32a6ab7555f5a67b8647dc68c049p-2l
+#endif
+#ifndef M_LOG2
+#  define M_LOG2 0x1.62e42fefa39efp-1
+#endif
+#ifndef M_LOG2l
+#  define M_LOG2l 0x1.62e42fefa39ef35793c7673007e6p-1l
+#endif
 
 long double
 arm_math_sinpil (long double x)
@@ -154,9 +169,73 @@ arm_math_atan2pil (long double x, long double y)
 }
 
 double
+arm_math_exp10m1 (double x)
+{
+  long double xln10 = x * 0x1.26bb1bbb5551582dd4adac5705a6p1l;
+  /* exp10 is a GNU extension, so for comptability, use pow.  */
+  return (fabsl (x) < 0x1p-55) ? xln10 : powl (10, x) - 1.0l;
+}
+
+long double
+arm_math_exp10m1l (long double x)
+{
+  long double xln10 = x * 0x1.26bb1bbb5551582dd4adac5705a6p1l;
+  /* exp10 is a GNU extension, so for comptability, use pow.  */
+  return (fabsl (x) < 0x1p-55) ? xln10 : powl (10, x) - 1.0l;
+}
+
+double
 arm_math_exp2m1 (double x)
 {
-  return (fabs (x) < 0x1p-52)
-	     ? (long double) x * 0x1.62e42fefa39ef35793c7673007e6p-1l
-	     : exp2l ((long double) x) - 1.0l;
+  return (fabs (x) < 0x1p-23) ? x * M_LOG2 : exp2 (x) - 1.0;
+}
+
+long double
+arm_math_exp2m1l (long double x)
+{
+  return (fabsl (x) < 0x1p-52l) ? x * M_LOG2l : exp2l (x) - 1.0l;
+}
+
+double
+arm_math_log2p1 (double x)
+{
+  return log1p (x) * M_INV_LOG2l;
+}
+
+long double
+arm_math_log2p1l (long double x)
+{
+  return (fabsl (x) < 0x1p-52l) ? (long double) x * M_INV_LOG2l
+				: (log1pl ((long double) x) / logl (2));
+}
+
+double
+arm_math_log10p1 (double x)
+{
+  return log1p (x) * M_INV_LOG10;
+}
+
+long double
+arm_math_log10p1l (long double x)
+{
+  return (fabsl (x) < 0x1p-52l) ? (long double) x * M_INV_LOG10l
+				: (log1pl ((long double) x) / logl (10));
+}
+
+double
+arm_math_rsqrt (double x)
+{
+  return 1 / sqrt (x);
+}
+
+long double
+arm_math_rsqrtl (long double x)
+{
+  return 1 / sqrtl (x);
+}
+
+double
+arm_math_powr (double x, double y)
+{
+  return exp (y * log (x));
 }
