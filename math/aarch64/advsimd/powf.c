@@ -1,5 +1,5 @@
 /*
- * Single-precision vector powf function.
+ * Single-precision vector x^y function.
  *
  * Copyright (c) 2019-2025, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
@@ -117,7 +117,6 @@ v_powf_x_is_neg_or_small (float32x4_t x, float32x4_t y, const struct data *d)
 }
 
 /* Implementation of AdvSIMD powf.
-   The theoretical maximum error is under 2.60 ULPs.
    Maximum measured error is 2.57 ULPs:
    V_NAME_F2 (pow) (0x1.031706p+0, 0x1.ce2ec2p+12)
      got 0x1.fff868p+127
@@ -153,7 +152,7 @@ float32x4_t VPCS_ATTR NOINLINE V_NAME_F2 (pow) (float32x4_t x, float32x4_t y)
 HALF_WIDTH_ALIAS_F2 (pow)
 
 TEST_SIG (V, F, 2, pow)
-TEST_ULP (V_NAME_F2 (pow), 2.1)
+TEST_ULP (V_NAME_F2 (pow), 2.08)
 #define V_POWF_INTERVAL2(xlo, xhi, ylo, yhi, n)                               \
   TEST_INTERVAL2 (V_NAME_F2 (pow), xlo, xhi, ylo, yhi, n)                     \
   TEST_INTERVAL2 (V_NAME_F2 (pow), xlo, xhi, -ylo, -yhi, n)
@@ -165,16 +164,33 @@ V_POWF_INTERVAL2 (1, inf, 0, inf, 50000)
 V_POWF_INTERVAL2 (0x1p-1, 0x1p1, 0x1p-7, 0x1p7, 50000)
 V_POWF_INTERVAL2 (0x1p-70, 0x1p70, 0x1p-1, 0x1p1, 50000)
 V_POWF_INTERVAL2 (0x1.ep-1, 0x1.1p0, 0x1p8, 0x1p14, 50000)
-/* |x| is 0, inf or nan.  */
-V_POWF_INTERVAL2 (0.0, 0.0, 0, inf, 1000)
-V_POWF_INTERVAL2 (inf, inf, 0, inf, 1000)
-V_POWF_INTERVAL2 (nan, nan, 0, inf, 1000)
-/* |y| is 0, inf or nan.  */
-V_POWF_INTERVAL2 (0, inf, 0.0, 0.0, 1000)
-V_POWF_INTERVAL2 (0, inf, inf, inf, 1000)
-V_POWF_INTERVAL2 (0, inf, nan, nan, 1000)
+#define V_POWF_SPECIALX(ylo, yhi, n)                                          \
+  V_POWF_INTERVAL2 (0, 0, ylo, yhi, n)                                        \
+  V_POWF_INTERVAL2 (1, 1, ylo, yhi, n)                                        \
+  V_POWF_INTERVAL2 (inf, inf, ylo, yhi, n)                                    \
+  V_POWF_INTERVAL2 (nan, nan, ylo, yhi, n)                                    \
+  V_POWF_INTERVAL2 (0xffff0000, 0xffff0000, ylo, yhi, n)
+#define V_POWF_SPECIALY(xlo, xhi, n)                                          \
+  V_POWF_INTERVAL2 (xlo, xhi, 0, 0, n)                                        \
+  V_POWF_INTERVAL2 (xlo, xhi, inf, inf, n)                                    \
+  V_POWF_INTERVAL2 (xlo, xhi, nan, nan, n)                                    \
+  V_POWF_INTERVAL2 (xlo, xhi, 0xffff0000, 0xffff0000, n)
+/* x is 0, inf or nan. |y| is finite.  */
+V_POWF_SPECIALX (0.0, inf, 1000)
+/* x is 0, inf or nan. |y| is special.  */
+V_POWF_SPECIALX (0.0, 0.0, 1)
+V_POWF_SPECIALX (inf, inf, 1)
+V_POWF_SPECIALX (nan, nan, 1)
+V_POWF_SPECIALX (0xffff0000, 0xffff0000, 1)
+/* |y| is 0, inf or nan. x is finite.  */
+V_POWF_SPECIALY (0.0, inf, 1000)
+/* |y| is 0, inf or nan. x is special.  */
+V_POWF_SPECIALY (0.0, 0.0, 1)
+V_POWF_SPECIALY (1.0, 1.0, 1)
+V_POWF_SPECIALY (inf, inf, 1)
+V_POWF_SPECIALY (0xffff0000, 0xffff0000, 1)
 /* x is negative.  */
-TEST_INTERVAL2 (V_NAME_F2 (powr), -0.0, -inf, 0, 0xffff0000, 1000)
+TEST_INTERVAL2 (V_NAME_F2 (pow), -0.0, -inf, 0, 0xffff0000, 1000)
 
 /* pow-specific cases, not shared with powr.  */
 
