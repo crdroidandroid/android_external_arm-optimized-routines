@@ -27,7 +27,7 @@ static uint8_t a[MAX_SIZE + 4096] __attribute__((__aligned__(4096)));
   RUN (TESTFN, memset);				\
   RUNA64 (TESTFN, __memset_aarch64);		\
   RUNSVE (TESTFN, __memset_aarch64_sve);	\
-  RUNMOPS (TESTFN, __memset_mops);		\
+  RUNMOPS (TESTFN, __memset_aarch64_mops);	\
   RUNA32 (TESTFN, __memset_arm);		\
   printf ("\n");
 
@@ -39,7 +39,7 @@ typedef struct { uint8_t align; uint16_t freq; } align_data_t;
 
 #define SIZE_NUM 65536
 #define SIZE_MASK (SIZE_NUM-1)
-static uint8_t len_arr[SIZE_NUM];
+static uint16_t len_arr[SIZE_NUM];
 
 /* Frequency data for memset sizes up to 4096 based on SPEC2017.  */
 static freq_data_t memset_len_freq[] =

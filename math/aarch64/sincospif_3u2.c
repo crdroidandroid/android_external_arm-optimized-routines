@@ -1,7 +1,7 @@
 /*
  * Single-precision scalar sincospi function.
  *
- * Copyright (c) 2024, Arm Limited.
+ * Copyright (c) 2024-2025, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
@@ -130,9 +130,7 @@ arm_math_sincospif (float x, float *out_sin, float *out_cos)
     }
 }
 
-#if WANT_TRIGPI_TESTS
-TEST_DISABLE_FENV (arm_math_sincospif_sin)
-TEST_DISABLE_FENV (arm_math_sincospif_cos)
+#if WANT_C23_TESTS
 TEST_ULP (arm_math_sincospif_sin, 2.54)
 TEST_ULP (arm_math_sincospif_cos, 2.68)
 #  define SINCOSPIF_INTERVAL(lo, hi, n)                                       \

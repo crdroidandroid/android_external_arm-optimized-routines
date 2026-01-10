@@ -12,7 +12,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
+#if !defined (_WIN32)
+#  include <sys/mman.h>
+#else
+#  include <windows.h>
+#endif
 #include <time.h>
 #include <unistd.h>
 #include "../include/networking.h"
@@ -74,9 +78,9 @@ static struct
 {
     { checksum_simple, "simple"},
     { __chksum, "scalar"},
-#if __arm__
+#if __arm__ && __ARM_NEON
     { __chksum_arm_simd, "simd" },
-#elif __aarch64__
+#elif __aarch64__ && __ARM_NEON
     { __chksum_aarch64_simd, "simd" },
 #endif
     { NULL, NULL}
@@ -277,12 +281,21 @@ usage :
 
     CKSUM_FP = implementations[IMPL].cksum_fp;
     POOLSIZE = ALIGN(POOLSIZE, CACHE_LINE);
+#if !defined (_WIN32)
     uint8_t *base = mmap(0, POOLSIZE, PROT_READ|PROT_WRITE,
 			MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     if (base == MAP_FAILED)
     {
 	perror("aligned_alloc"), exit(EXIT_FAILURE);
     }
+#else
+    uint8_t *base = VirtualAlloc(0, POOLSIZE, MEM_RESERVE|MEM_COMMIT,
+				 PAGE_READWRITE);
+    if (base == 0)
+    {
+	perror("VirtualAlloc"), exit(EXIT_FAILURE);
+    }
+#endif
     for (size_t i = 0; i < POOLSIZE / 4; i++)
     {
 	((uint32_t *) base)[i] = rand();
@@ -372,10 +385,17 @@ usage :
 	}
     }
 
+#if !defined (_WIN32)
     if (munmap(base, POOLSIZE) != 0)
     {
 	perror("munmap"), exit(EXIT_FAILURE);
     }
+#else
 
+    if (VirtualFree(base, POOLSIZE, MEM_RELEASE) == 0)
+    {
+	perror("VirtualFree"), exit(EXIT_FAILURE);
+    }
+#endif
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -1,14 +1,13 @@
 /*
  * Double-precision SVE sincospi(x, *y, *z) function.
  *
- * Copyright (c) 2024, Arm Limited.
+ * Copyright (c) 2024-2025, Arm Limited.
  * SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
  */
 
 #include "sv_math.h"
-#include "test_defs.h"
-#include "mathlib.h"
 #include "sv_sincospi_common.h"
+#include "test_defs.h"
 
 /* Double-precision vector function allowing calculation of both sinpi and
    cospi in one function call, using shared argument reduction and polynomials.
@@ -23,17 +22,13 @@ void
 _ZGVsMxvl8l8_sincospi (svfloat64_t x, double *out_sin, double *out_cos,
 		       svbool_t pg)
 {
-  const struct sv_sincospi_data *d = ptr_barrier (&sv_sincospi_data);
-
-  svfloat64x2_t sc = sv_sincospi_inline (pg, x, d);
+  svfloat64x2_t sc = sv_sincospi_inline (pg, x);
 
   svst1 (pg, out_sin, svget2 (sc, 0));
   svst1 (pg, out_cos, svget2 (sc, 1));
 }
 
-#if WANT_TRIGPI_TESTS
-TEST_DISABLE_FENV (_ZGVsMxvl8l8_sincospi_sin)
-TEST_DISABLE_FENV (_ZGVsMxvl8l8_sincospi_cos)
+#if WANT_C23_TESTS
 TEST_ULP (_ZGVsMxvl8l8_sincospi_sin, 2.59)
 TEST_ULP (_ZGVsMxvl8l8_sincospi_cos, 2.66)
 #  define SV_SINCOSPI_INTERVAL(lo, hi, n)                                     \

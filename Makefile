@@ -1,6 +1,6 @@
 # Makefile - requires GNU make
 #
-# Copyright (c) 2018-2024, Arm Limited.
+# Copyright (c) 2018-2025, Arm Limited.
 # SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
 
 srcdir = .
@@ -10,8 +10,8 @@ libdir = $(prefix)/lib
 includedir = $(prefix)/include
 
 # Configure these in config.mk, do not make changes in this file.
-SUBS = math string networking
-HOST_CC = cc
+SUBS = math string networking fp
+HOST_CC ?= cc
 HOST_CFLAGS = -std=c99 -O2
 HOST_LDFLAGS =
 HOST_LDLIBS =
@@ -25,10 +25,15 @@ LDLIBS =
 AR = $(CROSS_COMPILE)ar
 RANLIB = $(CROSS_COMPILE)ranlib
 INSTALL = install
+FP_SUBDIR = none
+TEST_BIN_FLAGS = -static
+
 # Detect OS.
 # Assume Unix environment: Linux, Darwin, or Msys.
 OS := $(shell uname -s)
 OS := $(patsubst MSYS%,Msys,$(OS))
+OS := $(patsubst MINGW64%,Mingw64,$(OS))
+
 # Following math dependencies can be adjusted in config file
 # if necessary, e.g. for Msys.
 libm-libs = -lm
@@ -81,17 +86,22 @@ clean: $(SUBS:%=clean-%)
 distclean: clean
 	rm -f config.mk
 
-$(DESTDIR)$(bindir)/%: build/bin/%
-	$(INSTALL) -D $< $@
+INSTALL_DIRS = $(bindir) $(libdir) $(includedir)
 
-$(DESTDIR)$(libdir)/%.so: build/lib/%.so
-	$(INSTALL) -D $< $@
+$(INSTALL_DIRS):
+	mkdir -p $@
 
-$(DESTDIR)$(libdir)/%: build/lib/%
-	$(INSTALL) -m 644 -D $< $@
+$(bindir)/%: build/bin/% | $$(@D)
+	$(INSTALL) $< $@
 
-$(DESTDIR)$(includedir)/%: build/include/%
-	$(INSTALL) -m 644 -D $< $@
+$(libdir)/%.so: build/lib/%.so | $$(@D)
+	$(INSTALL) $< $@
+
+$(libdir)/%: build/lib/% | $$(@D)
+	$(INSTALL) -m 644 $< $@
+
+$(includedir)/%: build/include/% | $$(@D)
+	$(INSTALL) -m 644 $< $@
 
 install: $(SUBS:%=install-%)
 

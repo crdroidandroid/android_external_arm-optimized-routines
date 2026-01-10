@@ -1,6 +1,6 @@
 # Makefile fragment - requires GNU make
 #
-# Copyright (c) 2019-2021, Arm Limited.
+# Copyright (c) 2019-2025, Arm Limited.
 # SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
 
 S := $(srcdir)/string
@@ -82,10 +82,10 @@ build/lib/libstringlib.a: $(string-lib-objs)
 	$(RANLIB) $@
 
 build/bin/test/%: $(B)/test/%.o build/lib/libstringlib.a
-	$(CC) $(CFLAGS_ALL) $(LDFLAGS) -static -o $@ $^ $(LDLIBS)
+	$(CC) $(CFLAGS_ALL) $(LDFLAGS) $(TEST_BIN_FLAGS) -o $@ $^ $(LDLIBS)
 
 build/bin/bench/%: $(B)/bench/%.o build/lib/libstringlib.a
-	$(CC) $(CFLAGS_ALL) $(LDFLAGS) -static -o $@ $^ $(LDLIBS)
+	$(CC) $(CFLAGS_ALL) $(LDFLAGS) $(TEST_BIN_FLAGS) -o $@ $^ $(LDLIBS)
 
 build/include/%.h: $(S)/include/%.h
 	cp $< $@
@@ -108,8 +108,8 @@ bench-string: $(string-benches)
 	$(EMULATOR) build/bin/bench/memset
 
 install-string: \
- $(string-libs:build/lib/%=$(DESTDIR)$(libdir)/%) \
- $(string-includes:build/include/%=$(DESTDIR)$(includedir)/%)
+ $(string-libs:build/lib/%=$(libdir)/%) \
+ $(string-includes:build/include/%=$(includedir)/%)
 
 clean-string:
 	rm -f $(string-files)
